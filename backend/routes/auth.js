@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const auth = require('../middleware/auth');
 
 // Signup route
 router.post('/signup', async (req, res) => {
@@ -67,8 +69,7 @@ router.post('/login', async (req, res) => {
         // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, name: `${user.firstName} ${user.lastName}` },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            process.env.JWT_SECRET
         );
 
         res.json({
@@ -97,15 +98,58 @@ router.get('/me', async (req, res) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        res.json({
-            user: {
-                id: decoded.userId,
-                name: decoded.name
-            }
-        });
+        const user = await User.findOne({ _id: decoded.userId }).select('-password');
+
+        res.json(user);
     } catch (error) {
         console.error('Error in /me route:', error);
         res.status(401).json({ message: 'Token is invalid or expired' });
+    }
+});
+
+// Update user profile
+router.put('/profile', auth, async (req, res) => {
+    try {
+        const { firstName, lastName, currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update basic info
+        if (firstName) user.firstName = firstName;
+        if (lastName) user.lastName = lastName;
+
+        // Update password if provided
+        if (currentPassword && newPassword) {
+            const isMatch = await user.comparePassword(currentPassword);
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Current password is incorrect' });
+            }
+            user.password = newPassword;
+        }
+
+        await user.save();
+
+        // Generate new token with updated user info
+        const token = jwt.sign(
+            { userId: user._id, name: `${user.firstName} ${user.lastName}` },
+            process.env.JWT_SECRET
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(400).json({ message: error.message });
     }
 });
 

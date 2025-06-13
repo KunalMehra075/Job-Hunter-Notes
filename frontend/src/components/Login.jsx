@@ -25,10 +25,9 @@ const Login = () => {
     try {
       const response = await axios.post(`${BaseURL}/auth/login`, formData);
 
-      // Store the token in localStorage
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Set the default Authorization header for all future requests
       axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${response.data.token}`;

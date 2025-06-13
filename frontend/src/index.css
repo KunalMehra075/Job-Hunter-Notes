@@ -22,7 +22,9 @@ body {
   background-color: #1a1a1a;
   color: #ffffff;
 }
-
+button {
+  cursor: pointer;
+}
 a {
   font-weight: 500;
   color: #646cff;

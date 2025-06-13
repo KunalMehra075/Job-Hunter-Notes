@@ -4,6 +4,7 @@ import Masonry from "react-masonry-css";
 import ParagraphCard from "./ParagraphCard";
 import AddNote from "./AddNote";
 import axios from "axios";
+import swalAlert from "../utils/swalAlert";
 import { BaseURL } from "../utils/BaseURL";
 
 const NotesContainer = () => {
@@ -41,6 +42,23 @@ const NotesContainer = () => {
       fetchNotes();
     } catch (error) {
       console.error("Error updating note:", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const result = await swalAlert(
+      "Are you sure you want to delete this note?",
+      "This action cannot be undone.",
+      "warning",
+      12000
+    );
+    try {
+      if (result.isConfirmed) {
+        await axios.delete(`${BaseURL}/notes/${id}`);
+        fetchNotes();
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
     }
   };
 
@@ -103,11 +121,12 @@ const NotesContainer = () => {
                         }}
                       >
                         <ParagraphCard
-                          title={note.order + " " + note.title}
+                          title={note.title}
                           paragraph={note.paragraph}
                           onEdit={(newTitle, newParagraph) =>
                             handleEdit(note._id, newTitle, newParagraph)
                           }
+                          onDelete={() => handleDelete(note._id)}
                         />
                       </div>
                     )}

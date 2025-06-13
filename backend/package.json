@@ -1,7 +1,7 @@
 {
   "name": "jobhunt-impossible-backend",
   "version": "1.0.0",
-  "description": "Backend for Job Hunt Impossible application",
+  "description": "Backend for Job Hunter Notes application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

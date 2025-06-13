@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Note = require('../models/Note');
 
-// Get all notes
+// Get all notes for the current user
 router.get('/', async (req, res) => {
     try {
-        const notes = await Note.find().sort({ order: 1 });
+        const notes = await Note.find({ user: req.user.userId }).sort({ order: 1 });
         res.json(notes);
     } catch (error) {
         console.error('Error fetching notes:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error fetching notes' });
     }
 });
 
@@ -17,35 +17,41 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { title, paragraph } = req.body;
-        const lastNote = await Note.findOne().sort({ order: -1 });
+        const lastNote = await Note.findOne({ user: req.user.userId }).sort({ order: -1 });
         const order = lastNote ? lastNote.order + 1 : 0;
 
         const note = new Note({
             title,
             paragraph,
-            order
+            order,
+            user: req.user.userId
         });
 
-        const savedNote = await note.save();
-        res.status(201).json(savedNote);
+        await note.save();
+        res.status(201).json(note);
     } catch (error) {
         console.error('Error creating note:', error);
         res.status(400).json({ message: error.message });
     }
 });
 
-// Reorder notes - This route must come before the update route
+// Reorder notes
 router.put('/reorder', async (req, res) => {
     try {
         const { notes } = req.body;
 
         // Update each note's order
-        const updatePromises = notes.map(({ _id, order }) =>
-            Note.findByIdAndUpdate(_id, { order }, { new: true })
+        const updatePromises = notes.map((noteId, index) =>
+            Note.findOneAndUpdate(
+                { _id: noteId, user: req.user.userId },
+                { order: index },
+                { new: true }
+            )
         );
 
         await Promise.all(updatePromises);
-        res.json({ message: 'Notes reordered successfully' });
+        const updatedNotes = await Note.find({ user: req.user.userId }).sort({ order: 1 });
+        res.json(updatedNotes);
     } catch (error) {
         console.error('Error reordering notes:', error);
         res.status(400).json({ message: error.message });
@@ -56,8 +62,8 @@ router.put('/reorder', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { title, paragraph } = req.body;
-        const note = await Note.findByIdAndUpdate(
-            req.params.id,
+        const note = await Note.findOneAndUpdate(
+            { _id: req.params.id, user: req.user.userId },
             { title, paragraph },
             { new: true }
         );
@@ -76,11 +82,19 @@ router.put('/:id', async (req, res) => {
 // Delete a note
 router.delete('/:id', async (req, res) => {
     try {
-        const note = await Note.findByIdAndDelete(req.params.id);
+        const note = await Note.findOneAndDelete({ _id: req.params.id, user: req.user.userId });
+
         if (!note) {
             return res.status(404).json({ message: 'Note not found' });
         }
-        res.json({ message: 'Note deleted' });
+
+        // Update order for remaining notes
+        await Note.updateMany(
+            { user: req.user.userId, order: { $gt: note.order } },
+            { $inc: { order: -1 } }
+        );
+
+        res.json({ message: 'Note deleted successfully' });
     } catch (error) {
         console.error('Error deleting note:', error);
         res.status(500).json({ message: error.message });

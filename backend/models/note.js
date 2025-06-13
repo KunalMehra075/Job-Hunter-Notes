@@ -13,14 +13,13 @@ const noteSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
-    },
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Note', noteSchema); 

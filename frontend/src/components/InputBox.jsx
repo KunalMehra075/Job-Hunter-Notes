@@ -36,6 +36,15 @@ const InputBox = () => {
     dispatch(setCompanyName(e.target.value));
   };
 
+  const handleCopy = async (e) => {
+    if (!navigator.clipboard) {
+      console.error("Clipboard API not supported");
+      return;
+    }
+    const textToCopy = e.target.textContent;
+    await navigator.clipboard.writeText(textToCopy);
+  };
+
   return (
     <div className="w-full  mx-auto p-4 flex gap-4">
       <div className="w-full">
@@ -44,7 +53,11 @@ const InputBox = () => {
           className="text-lg mb-5 text-white text-bold"
         >
           Enter Company Name:{" "}
-          <span className="bg-green-500/20 text-green-400 px-1 rounded">
+          <span
+            onClick={handleCopy}
+            title="Click to copy to clip-board"
+            className="bg-green-500/20 text-green-400 px-1 rounded cursor-pointer hover:bg-green-500/30"
+          >
             {formattedCompanyName}
           </span>
         </label>
@@ -59,7 +72,11 @@ const InputBox = () => {
       <div className="w-full">
         <label htmlFor="jobTitle" className="text-lg mb-5 text-white text-bold">
           Enter Job Title:{" "}
-          <span className="bg-blue-500/20 text-blue-400 px-1 rounded">
+          <span
+            onClick={handleCopy}
+            title="Click to copy to clip-board"
+            className="bg-blue-500/20 text-blue-400 px-1 rounded cursor-pointer hover:bg-blue-500/30"
+          >
             {formattedJobTitle}
           </span>
         </label>
@@ -74,7 +91,11 @@ const InputBox = () => {
       <div className="w-full">
         <label htmlFor="jobLink" className="text-lg mb-5 text-white text-bold">
           Enter Job Link:{" "}
-          <span className="bg-pink-500/20 text-pink-400 px-1 rounded">
+          <span
+            onClick={handleCopy}
+            title="Click to copy to clip-board"
+            className="bg-pink-500/20 text-pink-400 px-1 rounded cursor-pointer hover:bg-pink-500/30"
+          >
             {formattedJobLink}
           </span>
         </label>
@@ -92,7 +113,11 @@ const InputBox = () => {
           className="text-lg mb-5 text-white text-bold"
         >
           Enter Person Name:{" "}
-          <span className="bg-yellow-500/20 text-yellow-400 px-1 rounded">
+          <span
+            onClick={handleCopy}
+            title="Click to copy to clip-board"
+            className="bg-yellow-500/20 text-yellow-400 px-1 rounded cursor-pointer hover:bg-yellow-500/30"
+          >
             {formattedPersonName}
           </span>
         </label>
