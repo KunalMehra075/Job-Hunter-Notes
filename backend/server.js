@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const connectDB = require('./database/connection.js');
 const notesRouter = require('./routes/notes.js');
-const variablesRouter = require('./routes/variables.js');
+const variablesRouter = require('./routes/variable.js');
 const authRouter = require('./routes/auth.js');
 const auth = require('./middleware/auth.js');
 
