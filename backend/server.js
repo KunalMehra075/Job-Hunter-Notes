@@ -1,22 +1,19 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 require('dotenv').config();
 
-const connectDB = require('./database/connection');
-const notesRouter = require('./routes/notes');
-const variablesRouter = require('./routes/variables');
-const authRouter = require('./routes/auth');
-const auth = require('./middleware/auth');
+const connectDB = require('./database/connection.js');
+const notesRouter = require('./routes/notes.js');
+const variablesRouter = require('./routes/variables.js');
+const authRouter = require('./routes/auth.js');
+const auth = require('./middleware/auth.js');
 
 const app = express();
-
-// Connect to MongoDB
 
 
 // Middleware
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL,
     credentials: true
 }));
 app.use(express.json());

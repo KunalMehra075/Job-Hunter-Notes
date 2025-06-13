@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Note = require('../models/Note');
+const Note = require('../models/Note.js');
 
 // Get all notes for the current user
 router.get('/', async (req, res) => {

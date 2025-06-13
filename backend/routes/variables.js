@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Variable = require('../models/Variable');
+const Variable = require('../models/Variable.js');
 
 // Get all variables
 router.get('/', async (req, res) => {
