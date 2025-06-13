@@ -14,8 +14,8 @@ const app = express();
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,
-    credentials: true
 }));
+
 app.use(express.json());
 app.get('/', (req, res) => {
     res.send('Hello From the Job Hunter Notes Backend');
