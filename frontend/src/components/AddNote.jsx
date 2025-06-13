@@ -1,7 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
-import BaseURL from "../utils/BaseURL";
+import { BaseURL } from "../utils/BaseURL";
 import swalAlert from "../utils/swalAlert";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 const AddNote = ({ onNoteAdded }) => {
   const [title, setTitle] = useState("");
@@ -33,12 +34,14 @@ const AddNote = ({ onNoteAdded }) => {
   return (
     <div className="mb-6">
       {!isOpen ? (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Add New Note
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="bg-gray-600 flex items-center justify-center gap-2 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded cursor-pointer"
+          >
+            Add New Note <PlusIcon className="w-4 h-4" />
+          </button>
+        </div>
       ) : (
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold mb-4 text-white">Add New Note</h2>

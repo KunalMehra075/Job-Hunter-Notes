@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 
-const swalAlert = (title, text, icon = 'success', confirmButtonText = 'OK') => {
+const swalAlert = (title, text, icon = 'success', timer = 1500, confirmButtonText = 'OK') => {
     return Swal.fire({
         title,
         text,
@@ -14,7 +14,8 @@ const swalAlert = (title, text, icon = 'success', confirmButtonText = 'OK') => {
             title: 'dark-theme-title',
             content: 'dark-theme-content',
             confirmButton: 'dark-theme-button'
-        }
+        },
+        timer
     });
 };
 

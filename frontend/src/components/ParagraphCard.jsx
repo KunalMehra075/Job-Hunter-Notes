@@ -14,6 +14,9 @@ const ParagraphCard = ({ title, paragraph, onEdit }) => {
   const [editedParagraph, setEditedParagraph] = useState(paragraph);
   const [copied, setCopied] = useState(false);
   const companyName = useSelector((state) => state.company.companyName);
+  const jobTitle = useSelector((state) => state.company.jobTitle);
+  const jobLink = useSelector((state) => state.company.jobLink);
+  const personName = useSelector((state) => state.company.personName);
 
   const handleCopy = async () => {
     if (!navigator.clipboard) {
@@ -21,10 +24,11 @@ const ParagraphCard = ({ title, paragraph, onEdit }) => {
       return;
     }
 
-    const textToCopy = `${editedTitle}\n\n${editedParagraph}`.replace(
-      /{{companyName}}/g,
-      companyName
-    );
+    const textToCopy = `${editedTitle}\n\n${editedParagraph}`
+      .replace(/{{companyName}}/g, companyName)
+      .replace(/{{jobTitle}}/g, jobTitle)
+      .replace(/{{jobLink}}/g, jobLink)
+      .replace(/{{personName}}/g, personName);
 
     try {
       await navigator.clipboard.writeText(textToCopy);
@@ -43,8 +47,20 @@ const ParagraphCard = ({ title, paragraph, onEdit }) => {
     swalAlert("Success!", "Note updated successfully", "success");
   };
 
-  const displayTitle = highlightText(editedTitle, companyName);
-  const displayParagraph = highlightText(editedParagraph, companyName);
+  const displayTitle = highlightText(
+    editedTitle,
+    companyName,
+    jobTitle,
+    jobLink,
+    personName
+  );
+  const displayParagraph = highlightText(
+    editedParagraph,
+    companyName,
+    jobTitle,
+    jobLink,
+    personName
+  );
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 shadow-lg break-inside-avoid max-h-[65vh] flex flex-col">

@@ -4,14 +4,14 @@ import Masonry from "react-masonry-css";
 import ParagraphCard from "./ParagraphCard";
 import AddNote from "./AddNote";
 import axios from "axios";
-import BaseURL from "../utils/BaseURL";
+import { BaseURL } from "../utils/BaseURL";
 
 const NotesContainer = () => {
   const [notes, setNotes] = useState([]);
 
   const breakpointColumns = {
-    default: 4,
-    1280: 4, // lg
+    default: 5,
+    1280: 5, // lg
     1024: 3, // md
     768: 2, // sm
     640: 1, // xs
@@ -70,7 +70,7 @@ const NotesContainer = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 overflow-x-hidden">
       <AddNote onNoteAdded={fetchNotes} />
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="notes" direction="horizontal">
@@ -92,12 +92,18 @@ const NotesContainer = () => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`mb-4 ${
-                          snapshot.isDragging ? "shadow-2xl" : ""
-                        } transition-shadow duration-200`}
+                        className={`mb-4 transition-all duration-300 ease-in-out ${
+                          snapshot.isDragging ? "shadow-2xl scale-105" : ""
+                        }`}
+                        style={{
+                          ...provided.draggableProps.style,
+                          transform: snapshot.isDragging
+                            ? provided.draggableProps.style?.transform
+                            : "none",
+                        }}
                       >
                         <ParagraphCard
-                          title={note.title}
+                          title={note.order + " " + note.title}
                           paragraph={note.paragraph}
                           onEdit={(newTitle, newParagraph) =>
                             handleEdit(note._id, newTitle, newParagraph)

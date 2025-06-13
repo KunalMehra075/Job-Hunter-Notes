@@ -1,24 +1,80 @@
-import { Provider } from "react-redux";
-import { store } from "./store/store";
-import InputBox from "./components/InputBox";
-import NotesContainer from "./components/NotesContainer";
+import React, { useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import Dashboard from "./components/Dashboard";
+import Navbar from "./components/Navbar";
+import axios from "axios";
+import { BaseURL } from "./utils/BaseURL";
 
-function App() {
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      try {
+        await axios.get(`${BaseURL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setIsAuthenticated(true);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (isAuthenticated === null) {
+    return <div>Loading...</div>;
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+const App = () => {
+  useEffect(() => {
+    // Set up axios defaults
+    const token = localStorage.getItem("token");
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+  }, []);
+
   return (
-    <Provider store={store}>
-      <div className="min-h-screen bg-gray-900">
-        <header className="bg-gray-800 p-4">
-          <h1 className="text-2xl font-bold text-center text-white">
-            Job Hunt Helper
-          </h1>
-        </header>
-        <main className="container mx-auto py-8">
-          <InputBox />
-          <NotesContainer />
-        </main>
-      </div>
-    </Provider>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <Dashboard />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
