@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const connectDB = require('./database/connection.js');
-const notesRouter = require('./routes/notes.js');
+const notesRouter = require('./routes/note.js');
 const variablesRouter = require('./routes/variable.js');
 const authRouter = require('./routes/auth.js');
 const auth = require('./middleware/auth.js');
@@ -17,7 +17,9 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-
+app.get('/', (req, res) => {
+    res.send('Hello From the Job Hunter Notes Backend');
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/notes', auth, notesRouter);
