@@ -35,7 +35,12 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
-    await connectDB();
+    try {
+        await connectDB;
+        console.log('Connected to Database');
+    } catch (error) {
+        console.log('Error connecting to MongoDB', error);
+    }
     console.log(`Server is running on port ${PORT}`);
 });
 
