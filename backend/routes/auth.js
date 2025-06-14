@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/users.js');
 const auth = require('../middleware/auth.js');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 // Signup route
 router.post('/signup', async (req, res) => {
@@ -51,6 +54,7 @@ router.post('/signup', async (req, res) => {
 
 // Login route
 router.post('/login', async (req, res) => {
+    console.log(process.env.MONGODB_URI);
     try {
         const { email, password } = req.body;
 
