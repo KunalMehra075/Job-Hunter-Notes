@@ -13,10 +13,18 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Create a new note
 router.post('/', async (req, res) => {
     try {
         const { title, paragraph } = req.body;
+
+        if (!title || !paragraph) {
+            return res.status(400).json({ message: 'Title and paragraph are required' });
+        }
+        const noteExists = await Note.findOne({ title, user: req.user.userId, paragraph });
+        if (noteExists) {
+            return res.status(400).json({ message: 'Note already exists' });
+        }
+
         const lastNote = await Note.findOne({ user: req.user.userId }).sort({ order: -1 });
         const order = lastNote ? lastNote.order + 1 : 0;
 

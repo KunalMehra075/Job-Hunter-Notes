@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BaseURL } from "../utils/BaseURL";
-import swalAlert from "../utils/swalAlert";
+import { toast } from "react-toastify";
 
 const inputStyle =
   "p-2 mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500";
@@ -34,23 +34,11 @@ const Signup = () => {
         "Authorization"
       ] = `Bearer ${response.data.token}`;
 
-      swalAlert(
-        "success",
-        "Account created successfully",
-        "success",
-        1500,
-        "OK"
-      );
+      toast.success("Account created successfully");
 
       navigate("/dashboard");
     } catch (error) {
-      swalAlert(
-        "error",
-        error.response?.data?.message || "Failed to create account",
-        "error",
-        1500,
-        "OK"
-      );
+      toast.error(error?.response?.data?.message || "Failed to create account");
     }
   };
 

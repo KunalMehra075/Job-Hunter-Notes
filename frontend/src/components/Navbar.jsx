@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BaseURL } from "../utils/BaseURL";
-import swalAlert from "../utils/swalAlert";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -31,7 +31,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
-    swalAlert("Logout Success", "Logged out successfully", "info");
+    toast.info("Logged out successfully");
     navigate("/login");
   };
 

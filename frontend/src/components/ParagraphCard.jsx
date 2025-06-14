@@ -6,8 +6,8 @@ import {
   CheckCircleIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import swalAlert from "../utils/swalAlert";
 import highlightText from "../utils/textHighlighter";
+import { toast } from "react-toastify";
 
 const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -22,6 +22,7 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
   const handleCopy = async () => {
     if (!navigator.clipboard) {
       console.error("Clipboard API not supported");
+      toast.error("Clipboard API not supported");
       return;
     }
 
@@ -34,6 +35,7 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
+      toast.success("Copied to clipboard");
       setTimeout(() => {
         setCopied(false);
       }, 1000);
@@ -45,7 +47,6 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
   const handleSave = () => {
     onEdit(editedTitle, editedParagraph);
     setIsEditing(false);
-    swalAlert("Success!", "Note updated successfully", "success");
   };
 
   const displayTitle = highlightText(

@@ -9,7 +9,7 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import Profile from "./components/Profile";
-import Navbar from "./components/Navbar";
+import { ToastContainer } from "react-toastify";
 import axios from "axios";
 import { BaseURL } from "./utils/BaseURL";
 
@@ -81,6 +81,14 @@ const App = () => {
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </div>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={2000}
+        newestOnTop={false}
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </Router>
   );
 };

@@ -1,18 +1,21 @@
 import { useState } from "react";
 import axios from "axios";
 import { BaseURL } from "../utils/BaseURL";
-import swalAlert from "../utils/swalAlert";
+
 import { PlusIcon } from "@heroicons/react/24/outline";
+import { toast } from "react-toastify";
 
 const AddNote = ({ onNoteAdded }) => {
   const [title, setTitle] = useState("");
   const [paragraph, setParagraph] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
-      const response = await axios.post(`${BaseURL}/notes`, {
+      await axios.post(`${BaseURL}/notes`, {
         title,
         paragraph,
       });
@@ -20,14 +23,17 @@ const AddNote = ({ onNoteAdded }) => {
       setTitle("");
       setParagraph("");
       setIsOpen(false);
-
-      swalAlert("Success!", "Note created successfully", "success");
+      toast.success("Note created successfully");
 
       if (onNoteAdded) {
         onNoteAdded();
       }
     } catch (error) {
-      swalAlert("Error!", "Failed to create note", "error");
+      toast.error(error.response?.data?.message || "Failed to create note");
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
     }
   };
 
@@ -86,10 +92,11 @@ const AddNote = ({ onNoteAdded }) => {
                 Cancel
               </button>
               <button
+                disabled={isLoading}
                 type="submit"
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
               >
-                Save Note
+                {isLoading ? "Saving..." : "Save Note"}
               </button>
             </div>
           </form>

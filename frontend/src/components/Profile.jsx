@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-
-import swalAlert from "../utils/swalAlert";
+import { toast } from "react-toastify";
 import { BaseURL } from "../utils/BaseURL";
 
 const Profile = () => {
@@ -22,7 +21,8 @@ const Profile = () => {
         const { firstName, lastName, email } = response.data;
         setFormData((prev) => ({ ...prev, firstName, lastName, email }));
       } catch (error) {
-        swalAlert("Error", "Failed to fetch user data", "error");
+        toast.error("Failed to fetch user data");
+        console.log(error);
       }
     };
 
@@ -60,7 +60,7 @@ const Profile = () => {
       axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${response.data.token}`;
-      swalAlert("Profile Updated", "Profile updated successfully", "info");
+      toast.info("Profile updated successfully");
       // Clear password fields
       setFormData((prev) => ({
         ...prev,
@@ -69,10 +69,8 @@ const Profile = () => {
         confirmPassword: "",
       }));
     } catch (error) {
-      swalAlert(
-        "Error",
-        error.response?.data?.message || error.message,
-        "error"
+      toast.error(
+        error.response?.data?.message || error.message || "Something went wrong"
       );
     } finally {
       setLoading(false);

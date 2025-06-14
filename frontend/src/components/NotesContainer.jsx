@@ -4,7 +4,8 @@ import Masonry from "react-masonry-css";
 import ParagraphCard from "./ParagraphCard";
 import AddNote from "./AddNote";
 import axios from "axios";
-import swalAlert from "../utils/swalAlert";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { BaseURL } from "../utils/BaseURL";
 
 const NotesContainer = () => {
@@ -42,26 +43,42 @@ const NotesContainer = () => {
         title: newTitle,
         paragraph: newParagraph,
       });
+      toast.success("Note updated successfully");
       fetchNotes();
     } catch (error) {
       console.error("Error updating note:", error);
+      toast.error("Error updating note");
     }
   };
 
   const handleDelete = async (id) => {
-    const result = await swalAlert(
-      "Are you sure you want to delete this note?",
-      "This action cannot be undone.",
-      "warning",
-      12000
-    );
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      background: "#1e2939",
+      color: "#ffffff",
+      customClass: {
+        popup: "dark-theme-popup",
+        title: "dark-theme-title",
+        content: "dark-theme-content",
+      },
+    });
+
     try {
       if (result.isConfirmed) {
         await axios.delete(`${BaseURL}/notes/${id}`);
         fetchNotes();
+        toast.success("Note deleted successfully");
       }
     } catch (error) {
       console.error("Error deleting note:", error);
+      toast.error("Error deleting note");
     }
   };
 
@@ -91,7 +108,11 @@ const NotesContainer = () => {
 
   return (
     <div className="container mx-auto p-4 overflow-x-hidden">
-      {isLoading ? (
+      {notes.length === 0 ? (
+        <div className="flex justify-center items-center h-screen">
+          <p className="text-2xl font-bold">No notes found</p>
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center items-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 dark:border-white"></div>
         </div>
