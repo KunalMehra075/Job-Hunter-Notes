@@ -25,7 +25,7 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
       return;
     }
 
-    const textToCopy = `${editedTitle}\n\n${editedParagraph}`
+    const textToCopy = `${editedParagraph}`
       .replace(/{{companyName}}/g, companyName)
       .replace(/{{jobTitle}}/g, jobTitle)
       .replace(/{{jobLink}}/g, jobLink)
