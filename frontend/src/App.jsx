@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,9 +15,9 @@ import { BaseURL } from "./utils/BaseURL";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
       if (!token) {

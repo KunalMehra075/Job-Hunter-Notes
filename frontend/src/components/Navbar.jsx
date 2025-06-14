@@ -34,7 +34,7 @@ const Navbar = () => {
     swalAlert("Logout Success", "Logged out successfully", "info");
     navigate("/login");
   };
-  console.log(user);
+
   if (!user) {
     return null;
   }

@@ -9,6 +9,7 @@ import { BaseURL } from "../utils/BaseURL";
 
 const NotesContainer = () => {
   const [notes, setNotes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const breakpointColumns = {
     default: 5,
@@ -19,13 +20,15 @@ const NotesContainer = () => {
   };
 
   const fetchNotes = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${BaseURL}/notes`);
-      // Sort notes by order
       const sortedNotes = response.data.sort((a, b) => a.order - b.order);
       setNotes(sortedNotes);
     } catch (error) {
       console.error("Error fetching notes:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -77,7 +80,6 @@ const NotesContainer = () => {
 
     setNotes(updatedItems);
 
-    // Update order in backend
     try {
       await axios.put(`${BaseURL}/notes/reorder`, {
         notes: updatedItems.map(({ _id, order }) => ({ _id, order })),
@@ -89,55 +91,63 @@ const NotesContainer = () => {
 
   return (
     <div className="container mx-auto p-4 overflow-x-hidden">
-      <AddNote onNoteAdded={fetchNotes} />
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="notes" direction="horizontal">
-          {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef}>
-              <Masonry
-                breakpointCols={breakpointColumns}
-                className="flex -ml-4 w-auto"
-                columnClassName="pl-4 bg-clip-padding"
-              >
-                {notes.map((note, index) => (
-                  <Draggable
-                    key={note._id}
-                    draggableId={note._id}
-                    index={index}
+      {isLoading ? (
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 dark:border-white"></div>
+        </div>
+      ) : (
+        <>
+          <AddNote onNoteAdded={fetchNotes} />
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="notes" direction="horizontal">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  <Masonry
+                    breakpointCols={breakpointColumns}
+                    className="flex -ml-4 w-auto"
+                    columnClassName="pl-4 bg-clip-padding"
                   >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`mb-4 transition-all duration-300 ease-in-out ${
-                          snapshot.isDragging ? "shadow-2xl scale-105" : ""
-                        }`}
-                        style={{
-                          ...provided.draggableProps.style,
-                          transform: snapshot.isDragging
-                            ? provided.draggableProps.style?.transform
-                            : "none",
-                        }}
+                    {notes.map((note, index) => (
+                      <Draggable
+                        key={note._id}
+                        draggableId={note._id}
+                        index={index}
                       >
-                        <ParagraphCard
-                          title={note.title}
-                          paragraph={note.paragraph}
-                          onEdit={(newTitle, newParagraph) =>
-                            handleEdit(note._id, newTitle, newParagraph)
-                          }
-                          onDelete={() => handleDelete(note._id)}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </Masonry>
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`mb-4 transition-all duration-300 ease-in-out ${
+                              snapshot.isDragging ? "shadow-2xl scale-105" : ""
+                            }`}
+                            style={{
+                              ...provided.draggableProps.style,
+                              transform: snapshot.isDragging
+                                ? provided.draggableProps.style?.transform
+                                : "none",
+                            }}
+                          >
+                            <ParagraphCard
+                              title={note.title}
+                              paragraph={note.paragraph}
+                              onEdit={(newTitle, newParagraph) =>
+                                handleEdit(note._id, newTitle, newParagraph)
+                              }
+                              onDelete={() => handleDelete(note._id)}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </Masonry>
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </>
+      )}
     </div>
   );
 };
