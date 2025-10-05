@@ -1,32 +1,29 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import {
-  ClipboardDocumentIcon,
-  PencilIcon,
-  CheckCircleIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
+import { Copy, Edit, Check, Trash2 } from "lucide-react";
 import highlightText from "../utils/textHighlighter";
 import { toast } from "react-toastify";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-  const [editedParagraph, setEditedParagraph] = useState(paragraph);
   const [copied, setCopied] = useState(false);
   const companyName = useSelector((state) => state.company.companyName);
   const jobTitle = useSelector((state) => state.company.jobTitle);
   const jobLink = useSelector((state) => state.company.jobLink);
   const personName = useSelector((state) => state.company.personName);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
     if (!navigator.clipboard) {
       console.error("Clipboard API not supported");
       toast.error("Clipboard API not supported");
       return;
     }
 
-    const textToCopy = `${editedParagraph}`
+    const textToCopy = `${paragraph}`
       .replace(/{{companyName}}/g, companyName)
       .replace(/{{jobTitle}}/g, jobTitle)
       .replace(/{{jobLink}}/g, jobLink)
@@ -44,20 +41,27 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
     }
   };
 
-  const handleSave = () => {
-    onEdit(editedTitle, editedParagraph);
-    setIsEditing(false);
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onEdit();
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete();
   };
 
   const displayTitle = highlightText(
-    editedTitle,
+    title,
     companyName,
     jobTitle,
     jobLink,
     personName
   );
   const displayParagraph = highlightText(
-    editedParagraph,
+    paragraph,
     companyName,
     jobTitle,
     jobLink,
@@ -65,74 +69,62 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
   );
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 shadow-lg break-inside-avoid max-h-[65vh] flex flex-col transition-all duration-300">
-      {isEditing ? (
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          <p className="text-white">Change Title</p>
-          <input
-            type="text"
-            value={editedTitle}
-            placeholder="Enter your title here..."
-            onChange={(e) => setEditedTitle(e.target.value)}
-            className="w-full p-2 rounded bg-gray-700 text-white"
-          />
-          <p className="text-white">Change Paragraph</p>
-          <textarea
-            value={editedParagraph}
-            placeholder="Enter your paragraph here..."
-            rows={15}
-            onChange={(e) => setEditedParagraph(e.target.value)}
-            className="w-full p-2 rounded bg-gray-700 text-white flex-1"
-          />
-          <button
-            onClick={handleSave}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+    <Card className="h-full w-full flex flex-col transition-all duration-300 hover:shadow-lg group relative">
+      <div className="h-full w-full flex flex-col">
+        {/* Action Buttons - Top Right (visible on hover) */}
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleEdit}
+            title="Edit"
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background shadow-sm"
           >
-            Save Changes
-          </button>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCopy}
+            title="Copy"
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background shadow-sm"
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDelete}
+            title="Delete"
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-destructive/10 hover:text-destructive shadow-sm"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
-      ) : (
-        <>
-          <h3
-            className="text-xl font-semibold mb-2 break-words"
+
+        {/* Card Content */}
+        <CardHeader className="pb-2 px-4 pt-4 pr-12">
+          <CardTitle
+            className="text-base font-semibold break-words line-clamp-2 cursor-grab"
             dangerouslySetInnerHTML={{ __html: displayTitle }}
           />
-          <div className="flex-1 overflow-hidden">
-            <p
-              className="text-gray-300 mb-4 break-words whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: displayParagraph }}
-            />
+        </CardHeader>
+        <CardContent className="pt-0 px-4 pb-4 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 overflow-hidden min-h-0">
+            <div className="h-full overflow-y-auto">
+              <p
+                className="text-muted-foreground break-words whitespace-pre-wrap text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: displayParagraph }}
+              />
+            </div>
           </div>
-          <div className="flex justify-end space-x-2 mt-2">
-            <button
-              onClick={onDelete}
-              className="p-2 hover:bg-gray-700 rounded cursor-pointer"
-              title="Delete"
-            >
-              <TrashIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={handleCopy}
-              className="p-2 hover:bg-gray-700 rounded cursor-pointer"
-              title="Copy"
-            >
-              {copied ? (
-                <CheckCircleIcon color="green" className="h-5 w-5" />
-              ) : (
-                <ClipboardDocumentIcon className="h-5 w-5" />
-              )}
-            </button>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 hover:bg-gray-700 rounded cursor-pointer"
-              title="Edit"
-            >
-              <PencilIcon className="h-5 w-5" />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+        </CardContent>
+      </div>
+    </Card>
   );
 };
 

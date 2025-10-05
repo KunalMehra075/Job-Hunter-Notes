@@ -1,15 +1,30 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BaseURL } from "../utils/BaseURL";
-import Swal from "sweetalert2";
-const inputStyle =
-  "p-2 mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500";
+import NotificationDialog from "./NotificationDialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+  });
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: "",
+    description: "",
+    variant: "info",
+    autoClose: false,
   });
   const navigate = useNavigate();
 
@@ -32,84 +47,91 @@ const Login = () => {
         "Authorization"
       ] = `Bearer ${response.data.token}`;
 
-      Swal.fire({
-        icon: "success",
+      setNotification({
+        isOpen: true,
         title: "Success!",
-        text: "Logged in successfully",
-        timer: 1500,
-        showConfirmButton: false,
+        description: "Logged in successfully",
+        variant: "success",
+        autoClose: true,
       });
 
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
     } catch (error) {
-      Swal.fire({
-        icon: "error",
+      setNotification({
+        isOpen: true,
         title: "Error",
-        text: error.response?.data?.message || "Failed to login",
+        description: error.response?.data?.message || "Failed to login",
+        variant: "error",
+        autoClose: false,
       });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          Login
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-300"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className={inputStyle}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-300"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              placeholder="Enter your password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className={inputStyle}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
             Login
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-400">
-          Don't have an account?{" "}
-          <button
-            onClick={() => navigate("/signup")}
-            className="font-medium text-blue-500 hover:text-blue-400"
-          >
-            Sign up
-          </button>
-        </p>
-      </div>
+          </CardTitle>
+          <CardDescription className="text-center">
+            Enter your email and password to access your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Login
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Button
+              variant="link"
+              className="p-0 h-auto font-medium"
+              onClick={() => navigate("/signup")}
+            >
+              Sign up
+            </Button>
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Notification Dialog */}
+      <NotificationDialog
+        isOpen={notification.isOpen}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        description={notification.description}
+        variant={notification.variant}
+        autoClose={notification.autoClose}
+      />
     </div>
   );
 };

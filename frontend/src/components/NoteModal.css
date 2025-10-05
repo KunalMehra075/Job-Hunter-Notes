@@ -1,0 +1,27 @@
+/* Force remove all focus styles from modal inputs */
+.modal-no-focus input,
+.modal-no-focus textarea,
+.modal-no-focus input:focus,
+.modal-no-focus textarea:focus,
+.modal-no-focus input:focus-visible,
+.modal-no-focus textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: hsl(var(--border)) !important;
+  ring: none !important;
+  ring-offset: none !important;
+}
+
+/* Override any component library focus styles */
+.modal-no-focus [data-radix-collection-item]:focus,
+.modal-no-focus [data-radix-collection-item]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure no focus styles on any child elements */
+.modal-no-focus *:focus,
+.modal-no-focus *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
