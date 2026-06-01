@@ -12,6 +12,7 @@ import {
 } from "../store/variablesSlice";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
 
 const ColorSwatches = ({ selected, onSelect }) => (
   <div className="flex flex-wrap gap-1.5">
@@ -161,7 +162,7 @@ const AddVariableForm = ({ onCancel }) => {
   );
 };
 
-const VariablesSidebar = () => {
+const VariablesSidebar = ({ open = false, onClose }) => {
   const dispatch = useDispatch();
   const variables = useSelector((state) => state.variables.variables);
   const [adding, setAdding] = useState(false);
@@ -171,29 +172,54 @@ const VariablesSidebar = () => {
   }, [dispatch]);
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-64 border-r border-border bg-background overflow-y-auto p-4 space-y-4">
-      <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Variables
-        </h2>
-        {variables.map((variable) => (
-          <VariablePill key={variable._id} variable={variable} />
-        ))}
-      </div>
-
-      {adding ? (
-        <AddVariableForm onCancel={() => setAdding(false)} />
-      ) : (
-        <Button
-          variant="outline"
-          className="w-full flex items-center gap-2"
-          onClick={() => setAdding(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add Variable
-        </Button>
+    <>
+      {/* Backdrop (mobile only, when drawer is open) */}
+      {open && (
+        <div
+          className="fixed inset-0 top-16 z-30 bg-black/40 lg:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
       )}
-    </aside>
+
+      <aside
+        className={cn(
+          "fixed left-0 top-16 bottom-0 z-40 w-64 overflow-y-auto border-r border-border bg-background p-4 space-y-4 transition-transform duration-300 lg:translate-x-0 lg:z-30",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex items-center justify-between lg:hidden">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Variables
+          </h2>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="hidden text-sm font-semibold uppercase tracking-wide text-muted-foreground lg:block">
+            Variables
+          </h2>
+          {variables.map((variable) => (
+            <VariablePill key={variable._id} variable={variable} />
+          ))}
+        </div>
+
+        {adding ? (
+          <AddVariableForm onCancel={() => setAdding(false)} />
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full flex items-center gap-2"
+            onClick={() => setAdding(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Variable
+          </Button>
+        )}
+      </aside>
+    </>
   );
 };
 

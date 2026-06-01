@@ -3,8 +3,8 @@ import logo from "../../assets/logo.png";
 
 const LandingNav = () => {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-[#F8FAFC]/80 backdrop-blur">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <header className="sticky top-0 z-40 px-4 pt-4">
+      <nav className="mx-auto flex h-16 w-[92%] max-w-5xl items-center justify-between rounded-2xl border border-slate-200/70 bg-white/80 px-5 shadow-lg shadow-slate-900/5 backdrop-blur sm:px-6 lg:w-4/5">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="ReuseNotes logo" className="h-8 w-8" />
           <span className="text-xl font-extrabold tracking-tight">

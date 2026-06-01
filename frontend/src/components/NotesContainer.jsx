@@ -44,8 +44,24 @@ const findFreeSlot = (placed, w, h, cols) => {
   }
 };
 
+// Single column / stacked notes below the `lg` breakpoint.
+const useIsMobile = () => {
+  const query = "(max-width: 1023px)";
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return mobile;
+};
+
 const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
   const dispatch = useDispatch();
+  const isMobile = useIsMobile();
   const { layouts } = useSelector((state) => state.layout);
   const [notes, setNotes] = useState([]);
   // Live, unsaved drag/resize edits (id -> {x,y,w,h}); takes precedence over
@@ -249,6 +265,20 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
           <p className="text-muted-foreground">
             Create your first note to get started!
           </p>
+        </div>
+      ) : isMobile ? (
+        // Mobile: simple stacked single column (no drag/resize grid)
+        <div className="flex flex-col gap-4">
+          {notes.map((note) => (
+            <div key={note._id} className="h-52">
+              <ParagraphCard
+                title={note.title}
+                paragraph={note.paragraph}
+                onEdit={() => handleEdit(note)}
+                onDelete={() => handleDelete(note._id)}
+              />
+            </div>
+          ))}
         </div>
       ) : (
         <Grid

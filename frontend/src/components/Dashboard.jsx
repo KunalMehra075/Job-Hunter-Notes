@@ -19,6 +19,7 @@ const DashboardContent = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [resetSignal, setResetSignal] = useState(0);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Dashboard · ReuseNotes";
@@ -55,10 +56,13 @@ const DashboardContent = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <VariablesSidebar />
-      <div className="ml-64">
-        <main className="px-6 py-6">
+      <Navbar onOpenVariables={() => setSidebarOpen(true)} />
+      <VariablesSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="lg:ml-64">
+        <main className="min-h-[calc(100vh-4rem)] bg-slate-100 px-4 py-6 sm:px-6 dark:bg-slate-900">
           {/* Composer (centered) + Reset Layout on the same level */}
           <div className="mb-8 flex items-start gap-3">
             <div className="flex flex-1 justify-center">
@@ -68,7 +72,7 @@ const DashboardContent = () => {
               variant="outline"
               size="sm"
               onClick={handleResetLayouts}
-              className="flex shrink-0 items-center gap-2"
+              className="hidden shrink-0 items-center gap-2 lg:flex"
             >
               <RotateCcw className="w-4 h-4" />
               Reset Layout

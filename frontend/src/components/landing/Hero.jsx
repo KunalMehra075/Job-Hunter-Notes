@@ -4,19 +4,8 @@ import InteractiveDemo from "./InteractiveDemo";
 
 const Hero = () => {
   return (
-    <section className="relative overflow-hidden">
-      {/* Soft gradient backdrops */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -left-24 h-72 w-72 rounded-full bg-[#6D28FF]/20 blur-3xl rn-float"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 right-0 h-72 w-72 rounded-full bg-[#3B82F6]/20 blur-3xl rn-float"
-        style={{ animationDelay: "1.5s" }}
-      />
-
-      <div className="relative mx-auto max-w-6xl px-4 pt-14 pb-10 sm:px-6 sm:pt-20 lg:pt-24">
+    <section className="relative">
+      <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-10 sm:px-6 sm:pt-14 lg:pt-16">
         <div className="mx-auto max-w-3xl text-center">
           <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-[#6D28FF]">
             <Sparkles className="h-3.5 w-3.5" />
