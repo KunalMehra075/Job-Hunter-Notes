@@ -1,23 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Provider, useDispatch } from "react-redux";
 import { store } from "../store/store";
 import VariablesSidebar from "./VariablesSidebar";
 import NotesContainer from "./NotesContainer";
+import NoteComposer from "./NoteComposer";
 import Navbar from "./Navbar";
 import NoteModal from "./NoteModal";
 import ConfirmDialog from "./ConfirmDialog";
 import { Button } from "./ui/button";
-import { Plus, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { resetLayouts } from "../store/layoutSlice";
 import { toast } from "react-toastify";
 
 const DashboardContent = () => {
   const dispatch = useDispatch();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editNoteData, setEditNoteData] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [resetSignal, setResetSignal] = useState(0);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = "Dashboard · ReuseNotes";
+  }, []);
 
   const handleNoteAdded = () => {
     setRefreshTrigger((prev) => prev + 1);
@@ -40,6 +45,7 @@ const DashboardContent = () => {
     try {
       await dispatch(resetLayouts()).unwrap();
       toast.success("Layout reset successfully");
+      setResetSignal((prev) => prev + 1);
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error resetting layouts:", error);
@@ -49,43 +55,33 @@ const DashboardContent = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       <VariablesSidebar />
       <div className="ml-64">
-        <Navbar showBrand={false} />
         <main className="px-6 py-6">
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center gap-3 mb-4">
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Note
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleResetLayouts}
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset Layout
-          </Button>
-        </div>
+          {/* Composer (centered) + Reset Layout on the same level */}
+          <div className="mb-8 flex items-start gap-3">
+            <div className="flex flex-1 justify-center">
+              <NoteComposer onNoteAdded={handleNoteAdded} />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetLayouts}
+              className="flex shrink-0 items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset Layout
+            </Button>
+          </div>
 
-        <NotesContainer
-          refreshTrigger={refreshTrigger}
-          onEditNote={handleEditNote}
-        />
+          <NotesContainer
+            refreshTrigger={refreshTrigger}
+            resetSignal={resetSignal}
+            onEditNote={handleEditNote}
+          />
 
-        {/* Add Note Modal */}
-        <NoteModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onNoteAdded={handleNoteAdded}
-          mode="add"
-        />
-
-        {/* Edit Note Modal */}
+          {/* Edit Note Modal */}
         <NoteModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}

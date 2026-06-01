@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import GridLayout, { WidthProvider } from "react-grid-layout";
 import ParagraphCard from "./ParagraphCard";
@@ -24,6 +24,12 @@ const CONSTRAINTS = { minW: 3, minH: 4, maxW: 8, maxH: 8 };
 const DEFAULT_W = 4; // 3 cards per row by default
 const DEFAULT_H = 4;
 
+// maxW < COLS guarantees findFreeSlot always terminates.
+const clampW = (w) =>
+  Math.max(CONSTRAINTS.minW, Math.min(Math.round(w) || DEFAULT_W, CONSTRAINTS.maxW));
+const clampH = (h) =>
+  Math.max(CONSTRAINTS.minH, Math.min(Math.round(h) || DEFAULT_H, CONSTRAINTS.maxH));
+
 // Find the first free slot scanning left-to-right, top-to-bottom, so new notes
 // fill the current row before wrapping to the next one (and never overlap
 // existing/dragged notes).
@@ -31,22 +37,20 @@ const findFreeSlot = (placed, w, h, cols) => {
   for (let y = 0; ; y++) {
     for (let x = 0; x + w <= cols; x++) {
       const collides = placed.some(
-        (p) =>
-          x < p.x + p.w &&
-          x + w > p.x &&
-          y < p.y + p.h &&
-          y + h > p.y
+        (p) => x < p.x + p.w && x + w > p.x && y < p.y + p.h && y + h > p.y
       );
       if (!collides) return { x, y };
     }
   }
 };
 
-const NotesContainer = ({ refreshTrigger, onEditNote }) => {
+const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
   const dispatch = useDispatch();
   const { layouts } = useSelector((state) => state.layout);
   const [notes, setNotes] = useState([]);
-  const [gridLayout, setGridLayout] = useState([]);
+  // Live, unsaved drag/resize edits (id -> {x,y,w,h}); takes precedence over
+  // persisted positions until the debounced save lands.
+  const [localLayout, setLocalLayout] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
@@ -82,52 +86,83 @@ const NotesContainer = ({ refreshTrigger, onEditNote }) => {
     if (refreshTrigger > 0) fetchNotes();
   }, [refreshTrigger, fetchNotes]);
 
-  // Build the grid layout from notes + persisted layouts.
-  // Saved positions win (so Reset Layout takes effect); otherwise reuse the
-  // current local position; otherwise fall back to a default slot.
+  // Clear local edits only on an explicit layout reset, so persisted defaults
+  // take over. (Clearing on every `layouts` change caused a save→clear→save
+  // feedback churn.)
   useEffect(() => {
-    const savedMap = layouts.reduce((acc, l) => {
+    if (resetSignal > 0) setLocalLayout({});
+  }, [resetSignal]);
+
+  // Persisted positions keyed by note id.
+  const savedMap = useMemo(() => {
+    return layouts.reduce((acc, l) => {
       acc[String(l.noteId)] = l;
       return acc;
     }, {});
+  }, [layouts]);
 
-    setGridLayout((prev) => {
-      const prevMap = prev.reduce((acc, l) => {
-        acc[l.i] = l;
-        return acc;
-      }, {});
+  // Complete, guaranteed-non-overlapping layout for every rendered note,
+  // computed synchronously so a newly created note always has a valid position
+  // (no (0,0) "orphan" overlap, and any corrupted/overlapping saved data is
+  // self-healed). Precedence: live local edit > persisted > first free slot.
+  // A preferred position is kept only if it fits the grid and doesn't collide
+  // with an already-placed note; otherwise the note moves to the next free slot.
+  const effectiveLayout = useMemo(() => {
+    const placed = [];
+    const collides = (a) =>
+      placed.some(
+        (p) => a.x < p.x + p.w && a.x + a.w > p.x && a.y < p.y + p.h && a.y + a.h > p.y
+      );
 
-      const placed = [];
-      return notes.map((note) => {
-        const id = note._id;
-        const saved = savedMap[id];
-        const prior = prevMap[id];
-        let pos;
-        if (saved) {
-          pos = {
-            x: saved.x,
-            y: saved.y,
-            w: saved.w || saved.width || DEFAULT_W,
-            h: saved.h || saved.height || DEFAULT_H,
-          };
-        } else if (prior) {
-          pos = { x: prior.x, y: prior.y, w: prior.w, h: prior.h };
-        } else {
-          const slot = findFreeSlot(placed, DEFAULT_W, DEFAULT_H, COLS);
-          pos = { x: slot.x, y: slot.y, w: DEFAULT_W, h: DEFAULT_H };
-        }
-        placed.push(pos);
-        return { i: id, ...pos, ...CONSTRAINTS };
-      });
+    return notes.map((note) => {
+      const id = note._id;
+      const src = localLayout[id] || savedMap[id];
+      const w = clampW(src?.w || src?.width);
+      const h = clampH(src?.h || src?.height);
+
+      let pos = null;
+      if (src && Number.isFinite(src.x) && Number.isFinite(src.y)) {
+        const cand = { x: src.x, y: src.y, w, h };
+        const fitsGrid = cand.x >= 0 && cand.y >= 0 && cand.x + cand.w <= COLS;
+        if (fitsGrid && !collides(cand)) pos = cand;
+      }
+      if (!pos) {
+        pos = { ...findFreeSlot(placed, w, h, COLS), w, h };
+      }
+
+      placed.push(pos);
+      return { i: id, ...pos, ...CONSTRAINTS };
     });
-  }, [notes, layouts]);
+  }, [notes, savedMap, localLayout]);
+
+  // Keep a ref to what's currently displayed so we can ignore no-op
+  // onLayoutChange calls (RGL fires it on mount/compaction with no real change).
+  const effectiveRef = useRef(effectiveLayout);
+  effectiveRef.current = effectiveLayout;
 
   // Persist layout changes (debounced)
   const handleLayoutChange = useCallback(
     (newLayout) => {
-      setGridLayout(
-        newLayout.map((item) => ({ ...item, ...CONSTRAINTS }))
-      );
+      const current = effectiveRef.current.reduce((acc, l) => {
+        acc[l.i] = l;
+        return acc;
+      }, {});
+
+      const changed = newLayout.some((item) => {
+        const c = current[item.i];
+        return (
+          !c || c.x !== item.x || c.y !== item.y || c.w !== item.w || c.h !== item.h
+        );
+      });
+      if (!changed) return;
+
+      setLocalLayout((prev) => {
+        const next = { ...prev };
+        newLayout.forEach((item) => {
+          next[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h };
+        });
+        return next;
+      });
 
       const updates = newLayout.map((item) => ({
         noteId: item.i,
@@ -185,7 +220,11 @@ const NotesContainer = ({ refreshTrigger, onEditNote }) => {
     try {
       await axios.delete(`${BaseURL}/notes/${noteToDelete}`);
       dispatch(removeLocalLayout(noteToDelete));
-      setGridLayout((prev) => prev.filter((l) => l.i !== noteToDelete));
+      setLocalLayout((prev) => {
+        const next = { ...prev };
+        delete next[noteToDelete];
+        return next;
+      });
       fetchNotes();
       toast.success("Note deleted successfully");
     } catch (error) {
@@ -214,7 +253,7 @@ const NotesContainer = ({ refreshTrigger, onEditNote }) => {
       ) : (
         <Grid
           className="layout"
-          layout={gridLayout}
+          layout={effectiveLayout}
           cols={COLS}
           rowHeight={ROW_HEIGHT}
           onLayoutChange={handleLayoutChange}
@@ -228,8 +267,7 @@ const NotesContainer = ({ refreshTrigger, onEditNote }) => {
           isResizable
           margin={[12, 12]}
           containerPadding={[0, 0]}
-          useCSSTransforms
-          measureBeforeMount
+          useCSSTransforms={false}
           dragHandleClassName="drag-handle"
           draggableCancel=".no-drag"
         >

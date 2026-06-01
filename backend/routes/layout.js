@@ -10,9 +10,16 @@ router.get('/', async (req, res) => {
         const layouts = await Layout.find({ userId: req.user.userId })
             .populate('noteId', 'title paragraph')
             .sort({ createdAt: 1 });
-        console.log({ layouts: layouts.length, oneLayout: layouts[0] });
+
+        // Drop orphaned layouts whose note was deleted (noteId no longer resolves)
+        const orphanIds = layouts.filter(l => !l.noteId).map(l => l._id);
+        if (orphanIds.length) {
+            await Layout.deleteMany({ _id: { $in: orphanIds } });
+        }
+        const validLayouts = layouts.filter(l => l.noteId);
+
         // Convert to grid layout format
-        const gridLayouts = layouts.map(layout => ({
+        const gridLayouts = validLayouts.map(layout => ({
             id: layout._id,
             noteId: layout.noteId._id,
             i: layout.noteId._id.toString(),

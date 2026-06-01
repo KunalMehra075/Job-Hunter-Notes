@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { BaseURL } from "../utils/BaseURL";
 import { toast } from "react-toastify";
@@ -15,6 +15,7 @@ import {
 } from "./ui/dropdown-menu";
 import { ThemeToggle } from "./theme-toggle";
 import { User, LogOut } from "lucide-react";
+import logo from "../assets/logo.png";
 
 const Navbar = ({ showBrand = true }) => {
   const [user, setUser] = useState(null);
@@ -52,14 +53,21 @@ const Navbar = ({ showBrand = true }) => {
   }
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             {showBrand && (
-              <span className="text-foreground text-xl font-bold">
-                Reuse Notes
-              </span>
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
+              >
+                <img src={logo} alt="Reuse Notes logo" className="h-8 w-8" />
+                <span className="text-xl font-extrabold tracking-tight">
+                  <span className="text-foreground">Reuse</span>
+                  <span className="text-primary">Notes</span>
+                </span>
+              </Link>
             )}
           </div>
           <div className="flex items-center space-x-4">

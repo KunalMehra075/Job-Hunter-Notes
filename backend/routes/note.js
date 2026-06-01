@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/notes.js');
+const Layout = require('../models/layout.js');
 
 // Get all notes for the current user
 router.get('/', async (req, res) => {
@@ -95,6 +96,9 @@ router.delete('/:id', async (req, res) => {
         if (!note) {
             return res.status(404).json({ message: 'Note not found' });
         }
+
+        // Remove the note's saved layout so it doesn't become an orphan
+        await Layout.deleteOne({ noteId: note._id, userId: req.user.userId });
 
         // Update order for remaining notes
         await Note.updateMany(

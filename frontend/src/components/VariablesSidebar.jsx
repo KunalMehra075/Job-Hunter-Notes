@@ -171,34 +171,28 @@ const VariablesSidebar = () => {
   }, [dispatch]);
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-background overflow-y-auto flex flex-col">
-      <div className="h-16 flex items-center px-4 border-b border-border shrink-0">
-        <span className="text-xl font-bold">Reuse Notes</span>
+    <aside className="fixed left-0 top-16 bottom-0 w-64 border-r border-border bg-background overflow-y-auto p-4 space-y-4">
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Variables
+        </h2>
+        {variables.map((variable) => (
+          <VariablePill key={variable._id} variable={variable} />
+        ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Variables
-          </h2>
-          {variables.map((variable) => (
-            <VariablePill key={variable._id} variable={variable} />
-          ))}
-        </div>
-
-        {adding ? (
-          <AddVariableForm onCancel={() => setAdding(false)} />
-        ) : (
-          <Button
-            variant="outline"
-            className="w-full flex items-center gap-2"
-            onClick={() => setAdding(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Variable
-          </Button>
-        )}
-      </div>
+      {adding ? (
+        <AddVariableForm onCancel={() => setAdding(false)} />
+      ) : (
+        <Button
+          variant="outline"
+          className="w-full flex items-center gap-2"
+          onClick={() => setAdding(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Add Variable
+        </Button>
+      )}
     </aside>
   );
 };
