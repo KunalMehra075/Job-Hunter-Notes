@@ -1,120 +1,52 @@
-import { useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { cn } from "../lib/utils";
 
-const VariableHighlightEditor = ({
-  value,
-  onChange,
-  placeholder,
-  className,
-  style,
-  ...props
-}) => {
-  const textareaRef = useRef(null);
+// Borderless, Keep-style note textarea. Exposes insertVariable() to the parent
+// so the variable chips can live in the modal's bottom toolbar.
+const VariableHighlightEditor = forwardRef(
+  ({ value, onChange, placeholder, className, style, ...props }, ref) => {
+    const textareaRef = useRef(null);
 
-  // Available variables with their colors
-  const availableVariables = [
-    {
-      name: "companyName",
-      label: "Company Name",
-      color: "bg-green-500/10 text-green-600 hover:bg-green-500/20",
-    },
-    {
-      name: "jobTitle",
-      label: "Job Title",
-      color: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20",
-    },
-    {
-      name: "jobLink",
-      label: "Job Link",
-      color: "bg-pink-500/10 text-pink-600 hover:bg-pink-500/20",
-    },
-    {
-      name: "personName",
-      label: "Person Name",
-      color: "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20",
-    },
-  ];
+    const insertVariable = (variableName) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
 
-  // Handle textarea changes
-  const handleChange = (e) => {
-    onChange(e);
-  };
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const variableText = `{{${variableName}}}`;
+      const newValue =
+        value.substring(0, start) + variableText + value.substring(end);
 
-  // Insert variable at cursor position
-  const insertVariable = (variableName) => {
-    if (!textareaRef.current) return;
+      onChange({ target: { value: newValue } });
 
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const variableText = `{{${variableName}}}`;
-
-    // Insert the variable at cursor position
-    const newValue =
-      value.substring(0, start) + variableText + value.substring(end);
-
-    // Create synthetic event for onChange
-    const syntheticEvent = {
-      target: {
-        value: newValue,
-      },
+      setTimeout(() => {
+        const pos = start + variableText.length;
+        textarea.setSelectionRange(pos, pos);
+        textarea.focus();
+      }, 0);
     };
 
-    onChange(syntheticEvent);
+    useImperativeHandle(ref, () => ({ insertVariable }));
 
-    // Set cursor position after the inserted variable
-    setTimeout(() => {
-      const newCursorPosition = start + variableText.length;
-      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-      textarea.focus();
-    }, 0);
-  };
-
-  return (
-    <div className="space-y-3">
-      {/* Variable buttons */}
-      <div className="flex flex-wrap gap-2">
-        <span className="text-xs text-muted-foreground self-center">
-          Available variables:
-        </span>
-        {availableVariables.map((variable) => (
-          <button
-            key={variable.name}
-            type="button"
-            onClick={() => insertVariable(variable.name)}
-            className={cn(
-              "px-2 py-1 text-xs rounded-md border transition-colors cursor-pointer",
-              variable.color
-            )}
-          >
-            {variable.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Simple textarea */}
+    return (
       <textarea
         ref={textareaRef}
         value={value}
-        onChange={handleChange}
+        onChange={onChange}
         placeholder={placeholder}
         className={cn(
-          "w-full resize-none",
-          "border border-input rounded-md px-3 py-2",
+          "w-full resize-none bg-transparent text-foreground",
           "text-sm placeholder:text-muted-foreground",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          "bg-background text-foreground",
+          "border-0 outline-none focus:outline-none focus:ring-0",
           className
         )}
-        style={{
-          minHeight: "200px",
-          ...style,
-        }}
+        style={{ minHeight: "220px", ...style }}
         {...props}
       />
-    </div>
-  );
-};
+    );
+  }
+);
+
+VariableHighlightEditor.displayName = "VariableHighlightEditor";
 
 export default VariableHighlightEditor;

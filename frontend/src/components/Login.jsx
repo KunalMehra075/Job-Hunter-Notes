@@ -15,10 +15,8 @@ import {
 } from "./ui/card";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({
     isOpen: false,
     title: "",
@@ -28,17 +26,11 @@ const Login = () => {
   });
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const response = await axios.post(`${BaseURL}/auth/login`, formData);
+      const response = await axios.post(`${BaseURL}/auth/login`, { email });
 
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -47,25 +39,17 @@ const Login = () => {
         "Authorization"
       ] = `Bearer ${response.data.token}`;
 
-      setNotification({
-        isOpen: true,
-        title: "Success!",
-        description: "Logged in successfully",
-        variant: "success",
-        autoClose: true,
-      });
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+      navigate("/dashboard");
     } catch (error) {
       setNotification({
         isOpen: true,
         title: "Error",
-        description: error.response?.data?.message || "Failed to login",
+        description: error.response?.data?.message || "Failed to continue",
         variant: "error",
         autoClose: false,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,10 +58,11 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Login
+            Welcome to Reuse Notes
           </CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to access your account
+            Enter your email to continue. We'll create your space if it's your
+            first time.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -89,37 +74,16 @@ const Login = () => {
                 id="email"
                 name="email"
                 placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
+                autoFocus
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                type="password"
-                id="password"
-                placeholder="Enter your password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Please wait..." : "Continue"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Button
-              variant="link"
-              className="p-0 h-auto font-medium"
-              onClick={() => navigate("/signup")}
-            >
-              Sign up
-            </Button>
-          </p>
         </CardContent>
       </Card>
 

@@ -8,10 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
   const [copied, setCopied] = useState(false);
-  const companyName = useSelector((state) => state.company.companyName);
-  const jobTitle = useSelector((state) => state.company.jobTitle);
-  const jobLink = useSelector((state) => state.company.jobLink);
-  const personName = useSelector((state) => state.company.personName);
+  const variables = useSelector((state) => state.variables.variables);
 
   const handleCopy = async (e) => {
     e.stopPropagation();
@@ -23,11 +20,10 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
       return;
     }
 
-    const textToCopy = `${paragraph}`
-      .replace(/{{companyName}}/g, companyName)
-      .replace(/{{jobTitle}}/g, jobTitle)
-      .replace(/{{jobLink}}/g, jobLink)
-      .replace(/{{personName}}/g, personName);
+    let textToCopy = `${paragraph}`;
+    variables.forEach((v) => {
+      textToCopy = textToCopy.split(`{{${v.key}}}`).join(v.value || "");
+    });
 
     try {
       await navigator.clipboard.writeText(textToCopy);
@@ -53,26 +49,14 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
     onDelete();
   };
 
-  const displayTitle = highlightText(
-    title,
-    companyName,
-    jobTitle,
-    jobLink,
-    personName
-  );
-  const displayParagraph = highlightText(
-    paragraph,
-    companyName,
-    jobTitle,
-    jobLink,
-    personName
-  );
+  const displayTitle = highlightText(title, variables);
+  const displayParagraph = highlightText(paragraph, variables);
 
   return (
     <Card className="h-full w-full flex flex-col transition-all duration-300 hover:shadow-lg group relative">
       <div className="h-full w-full flex flex-col">
         {/* Action Buttons - Top Right (visible on hover) */}
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+        <div className="no-drag absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
           <Button
             variant="ghost"
             size="icon"
@@ -107,9 +91,9 @@ const ParagraphCard = ({ title, paragraph, onEdit, onDelete }) => {
         </div>
 
         {/* Card Content */}
-        <CardHeader className="pb-2 px-4 pt-4 pr-12">
+        <CardHeader className="drag-handle pb-2 px-4 pt-4 pr-12 cursor-grab">
           <CardTitle
-            className="text-base font-semibold break-words line-clamp-2 cursor-grab"
+            className="text-base font-semibold break-words line-clamp-2"
             dangerouslySetInnerHTML={{ __html: displayTitle }}
           />
         </CardHeader>

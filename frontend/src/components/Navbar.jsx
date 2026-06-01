@@ -16,7 +16,7 @@ import {
 import { ThemeToggle } from "./theme-toggle";
 import { User, LogOut } from "lucide-react";
 
-const Navbar = () => {
+const Navbar = ({ showBrand = true }) => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -53,12 +53,14 @@ const Navbar = () => {
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <span className="text-foreground text-xl font-bold">
-              Job Hunt Notes
-            </span>
+            {showBrand && (
+              <span className="text-foreground text-xl font-bold">
+                Reuse Notes
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />

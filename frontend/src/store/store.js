@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import companyReducer from './companySlice';
+import variablesReducer from './variablesSlice';
 import layoutReducer from './layoutSlice';
 
 export const store = configureStore({
     reducer: {
-        company: companyReducer,
+        variables: variablesReducer,
         layout: layoutReducer,
     },
 });

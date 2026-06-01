@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Provider, useDispatch } from "react-redux";
 import { store } from "../store/store";
-import InputBox from "./InputBox";
+import VariablesSidebar from "./VariablesSidebar";
 import NotesContainer from "./NotesContainer";
 import Navbar from "./Navbar";
 import NoteModal from "./NoteModal";
@@ -49,12 +49,19 @@ const DashboardContent = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="container mx-auto py-8">
-        <InputBox />
-
-        {/* Action Buttons */}
-        <div className="container mx-auto flex justify-end items-center gap-3 ">
+      <VariablesSidebar />
+      <div className="ml-64">
+        <Navbar showBrand={false} />
+        <main className="px-6 py-6">
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center gap-3 mb-4">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Note
+          </Button>
           <Button
             variant="outline"
             onClick={handleResetLayouts}
@@ -62,13 +69,6 @@ const DashboardContent = () => {
           >
             <RotateCcw className="w-4 h-4" />
             Reset Layout
-          </Button>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Note
           </Button>
         </div>
 
@@ -106,7 +106,8 @@ const DashboardContent = () => {
           variant="warning"
           confirmVariant="destructive"
         />
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

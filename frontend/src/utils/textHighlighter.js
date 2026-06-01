@@ -1,29 +1,37 @@
-const highlightText = (text, companyName, jobTitle, jobLink, personName) => {
-    // Split the text into parts based on {{}} syntax
-    const parts = text.split(/(\{\{[^}]+\}\})/g);
+// Escape HTML so user-controlled note text / variable values can't inject markup
+// (output is rendered via dangerouslySetInnerHTML).
+const escapeHtml = (str = "") =>
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
-    return parts.map((part, index) => {
-        if (part.startsWith('{{') && part.endsWith('}}')) {
-            const variable = part.slice(2, -2).trim();
-            if (variable === 'companyName') {
-                return `<span class="bg-green-500/20 text-green-400 px-1 rounded">${companyName}</span>`;
-            }
-            if (variable === 'jobTitle') {
-                return `<span class="bg-blue-500/20 text-blue-400 px-1 rounded">${jobTitle}</span>`;
-            }
-            if (variable === 'jobLink') {
-                return `<span class="bg-pink-500/20 text-pink-400 px-1 rounded">${jobLink}</span>`;
-            }
-            if (variable === 'personName') {
-                return `<span class="bg-yellow-500/20 text-yellow-400 px-1 rounded">${personName}</span>`;
-            }
+// Highlight {{key}} tokens using the user's dynamic variables.
+// `variables` is an array of { key, value, color }.
+const highlightText = (text, variables = []) => {
+  const map = new Map(variables.map((v) => [v.key, v]));
 
-            return `<span class="bg-red-500/20 text-red-400 px-1 rounded">${part}</span>`;
+  return text
+    .split(/(\{\{[^}]+\}\})/g)
+    .map((part) => {
+      if (part.startsWith("{{") && part.endsWith("}}")) {
+        const key = part.slice(2, -2).trim();
+        const variable = map.get(key);
+        if (variable) {
+          const color = variable.color || "#22c55e";
+          const display = escapeHtml(variable.value || key);
+          return `<span style="background-color:${color}33;color:${color};padding:0 4px;border-radius:4px">${display}</span>`;
         }
-
-
-        return part;
-    }).join('');
+        // Unknown variable -> red
+        return `<span style="background-color:#ef444433;color:#ef4444;padding:0 4px;border-radius:4px">${escapeHtml(
+          part
+        )}</span>`;
+      }
+      return escapeHtml(part);
+    })
+    .join("");
 };
 
-export default highlightText; 
+export default highlightText;

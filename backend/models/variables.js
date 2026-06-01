@@ -1,25 +1,44 @@
 const mongoose = require('mongoose');
 
 const variableSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     key: {
         type: String,
         required: true,
-        unique: true,
         trim: true
     },
     value: {
         type: String,
-        required: true,
+        default: '',
         trim: true
     },
-    description: {
+    color: {
         type: String,
-        trim: true
+        default: '#22c55e'
+    },
+    order: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true
 });
 
+// One variable name per user
+variableSchema.index({ userId: 1, key: 1 }, { unique: true });
+
 const Variable = mongoose.model('Variable', variableSchema);
 
-module.exports = Variable; 
+// Default variables seeded for every new user
+Variable.DEFAULT_VARS = [
+    { key: 'companyName', value: '', color: '#22c55e' },
+    { key: 'jobTitle', value: '', color: '#3b82f6' },
+    { key: 'jobLink', value: '', color: '#ec4899' },
+    { key: 'personName', value: '', color: '#f59e0b' },
+];
+
+module.exports = Variable;

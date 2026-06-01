@@ -3,88 +3,63 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/users.js');
+const Variable = require('../models/variables.js');
 const auth = require('../middleware/auth.js');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Signup route
-router.post('/signup', async (req, res) => {
-    try {
-        const { firstName, lastName, email, password } = req.body;
+const ADJECTIVES = ['Brave', 'Calm', 'Clever', 'Bright', 'Bold', 'Swift', 'Lucky', 'Quiet', 'Gentle', 'Witty'];
+const NOUNS = ['Otter', 'Falcon', 'Maple', 'River', 'Comet', 'Cedar', 'Sparrow', 'Fox', 'Willow', 'Heron'];
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
+const randomName = () => {
+    const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+    return `${adj}${noun}${Math.floor(Math.random() * 100)}`;
+};
 
-        // Create new user
-        const user = new User({
-            firstName,
-            lastName,
-            email,
-            password
-        });
+const issueToken = (user) =>
+    jwt.sign(
+        { userId: user._id, name: `${user.firstName} ${user.lastName}`.trim() },
+        process.env.JWT_SECRET
+    );
 
-        await user.save();
-
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user._id, name: `${user.firstName} ${user.lastName}` },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.status(201).json({
-            message: 'User created successfully',
-            token,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email
-            }
-        });
-    } catch (error) {
-        console.error('Error in signup:', error);
-        res.status(500).json({ message: 'Error creating user' });
-    }
+const userPayload = (user) => ({
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
 });
 
-// Login route
+// Passwordless login: find user by email, or create one on the fly
 router.post('/login', async (req, res) => {
-
     try {
-        const { email, password } = req.body;
-        console.log({ email, password });
-        // Find user
-        const user = await User.findOne({ email });
+        const { email } = req.body;
+
+        if (!email || !email.trim()) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        let user = await User.findOne({ email: normalizedEmail });
+
         if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
+            user = await User.create({
+                firstName: randomName(),
+                lastName: '',
+                email: normalizedEmail,
+            });
 
-        // Check password
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            // Seed default variables for the brand new user
+            await Variable.insertMany(
+                Variable.DEFAULT_VARS.map((d, i) => ({ ...d, userId: user._id, order: i }))
+            );
         }
-
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user._id, name: `${user.firstName} ${user.lastName}` },
-            process.env.JWT_SECRET
-        );
 
         res.json({
             message: 'Logged in successfully',
-            token,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email
-            }
+            token: issueToken(user),
+            user: userPayload(user),
         });
     } catch (error) {
         console.error('Error in login:', error);
@@ -102,7 +77,11 @@ router.get('/me', async (req, res) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findOne({ _id: decoded.userId }).select('-password');
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
 
         res.json(user);
     } catch (error) {
@@ -111,45 +90,24 @@ router.get('/me', async (req, res) => {
     }
 });
 
-// Update user profile
+// Update display name
 router.put('/profile', auth, async (req, res) => {
     try {
-        const { firstName, lastName, currentPassword, newPassword } = req.body;
+        const { firstName, lastName } = req.body;
         const user = await User.findById(req.user.userId);
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Update basic info
-        if (firstName) user.firstName = firstName;
-        if (lastName) user.lastName = lastName;
-
-        // Update password if provided
-        if (currentPassword && newPassword) {
-            const isMatch = await user.comparePassword(currentPassword);
-            if (!isMatch) {
-                return res.status(400).json({ message: 'Current password is incorrect' });
-            }
-            user.password = newPassword;
-        }
+        if (firstName !== undefined) user.firstName = firstName;
+        if (lastName !== undefined) user.lastName = lastName;
 
         await user.save();
 
-        // Generate new token with updated user info
-        const token = jwt.sign(
-            { userId: user._id, name: `${user.firstName} ${user.lastName}` },
-            process.env.JWT_SECRET
-        );
-
         res.json({
-            token,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email
-            }
+            token: issueToken(user),
+            user: userPayload(user),
         });
     } catch (error) {
         console.error('Error updating profile:', error);
@@ -157,4 +115,4 @@ router.put('/profile', auth, async (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;

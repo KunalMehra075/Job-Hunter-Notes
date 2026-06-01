@@ -6,7 +6,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import Login from "./components/Login";
-import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import Profile from "./components/Profile";
 import { ToastContainer } from "react-toastify";
@@ -58,12 +57,11 @@ const App = () => {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="job-hunt-notes-theme">
+    <ThemeProvider defaultTheme="light" storageKey="reuse-notes-theme">
       <Router>
         <div className="min-h-screen bg-background">
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
             <Route
               path="/dashboard"
               element={
