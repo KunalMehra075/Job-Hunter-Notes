@@ -5,19 +5,21 @@ import { BaseURL } from "../utils/BaseURL";
 import { toast } from "react-toastify";
 import { Button } from "./ui/button";
 import VariableHighlightEditor from "./VariableHighlightEditor";
+import TagInput from "./TagInput";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import "./NoteModal.css";
 
 const NoteModal = ({
   isOpen,
   onClose,
-  onNoteAdded,
-  onNoteUpdated,
+  onCreated,
+  onUpdated,
   mode = "add", // "add" or "edit"
   noteData = null, // For edit mode
 }) => {
   const [title, setTitle] = useState("");
   const [paragraph, setParagraph] = useState("");
+  const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const editorRef = useRef(null);
   const variables = useSelector((state) => state.variables.variables);
@@ -28,9 +30,11 @@ const NoteModal = ({
       if (mode === "edit" && noteData) {
         setTitle(noteData.title || "");
         setParagraph(noteData.paragraph || "");
+        setTags(noteData.tags || []);
       } else {
         setTitle("");
         setParagraph("");
+        setTags([]);
       }
     }
   }, [isOpen, mode, noteData]);
@@ -41,17 +45,22 @@ const NoteModal = ({
 
     try {
       if (mode === "add") {
-        await axios.post(`${BaseURL}/notes`, { title, paragraph });
+        const res = await axios.post(`${BaseURL}/notes`, { title, paragraph, tags });
         toast.success("Note created successfully");
-        if (onNoteAdded) onNoteAdded();
+        if (onCreated) onCreated(res.data);
       } else if (mode === "edit" && noteData) {
-        await axios.put(`${BaseURL}/notes/${noteData.id}`, { title, paragraph });
+        const res = await axios.put(`${BaseURL}/notes/${noteData.id}`, {
+          title,
+          paragraph,
+          tags,
+        });
         toast.success("Note updated successfully");
-        if (onNoteUpdated) onNoteUpdated();
+        if (onUpdated) onUpdated(res.data);
       }
 
       setTitle("");
       setParagraph("");
+      setTags([]);
       onClose();
     } catch (error) {
       const errorMessage =
@@ -66,6 +75,7 @@ const NoteModal = ({
   const handleClose = () => {
     setTitle("");
     setParagraph("");
+    setTags([]);
     onClose();
   };
 
@@ -92,12 +102,9 @@ const NoteModal = ({
               placeholder="Take a note..."
               required
             />
-          </div>
-
-          {/* Bottom toolbar */}
-          <div className="border-t px-4 py-3 space-y-3">
+            {/* Insert variables (under the editor) */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground mr-1">Insert:</span>
+              <span className="mr-1 text-xs text-muted-foreground">Insert:</span>
               {variables.map((variable) => (
                 <button
                   key={variable._id || variable.key}
@@ -114,6 +121,16 @@ const NoteModal = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Bottom toolbar: tags (borderless) + actions */}
+          <div className="border-t px-4 py-3 space-y-3">
+            <TagInput
+              tags={tags}
+              onChange={setTags}
+              placeholder="Add tags..."
+              borderless
+            />
 
             <div className="flex justify-end gap-2">
               <Button

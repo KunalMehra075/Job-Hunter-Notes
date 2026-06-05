@@ -6,11 +6,13 @@ import { toast } from "react-toastify";
 import { CheckSquare, Paintbrush, Image as ImageIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import VariableHighlightEditor from "./VariableHighlightEditor";
+import TagInput from "./TagInput";
 
-const NoteComposer = ({ onNoteAdded }) => {
+const NoteComposer = ({ onCreated }) => {
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState("");
   const [paragraph, setParagraph] = useState("");
+  const [tags, setTags] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef(null);
   const editorRef = useRef(null);
@@ -19,6 +21,7 @@ const NoteComposer = ({ onNoteAdded }) => {
   const reset = () => {
     setTitle("");
     setParagraph("");
+    setTags([]);
     setExpanded(false);
   };
 
@@ -29,12 +32,13 @@ const NoteComposer = ({ onNoteAdded }) => {
     }
     setIsSaving(true);
     try {
-      await axios.post(`${BaseURL}/notes`, {
+      const res = await axios.post(`${BaseURL}/notes`, {
         title: title.trim() || "Untitled",
         paragraph: paragraph.trim() || " ",
+        tags,
       });
       toast.success("Note created");
-      onNoteAdded?.();
+      onCreated?.(res.data);
       reset();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create note");
@@ -54,7 +58,7 @@ const NoteComposer = ({ onNoteAdded }) => {
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, title, paragraph]);
+  }, [expanded, title, paragraph, tags]);
 
   const expand = () => setExpanded(true);
 
@@ -96,11 +100,9 @@ const NoteComposer = ({ onNoteAdded }) => {
               autoFocus
               style={{ minHeight: "120px" }}
             />
-          </div>
-
-          <div className="flex items-center justify-between gap-2 px-4 py-2 border-t">
+            {/* Insert variables (under the editor) */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground mr-1">Insert:</span>
+              <span className="mr-1 text-xs text-muted-foreground">Insert:</span>
               {variables.map((variable) => (
                 <button
                   key={variable._id || variable.key}
@@ -116,6 +118,18 @@ const NoteComposer = ({ onNoteAdded }) => {
                   {variable.key}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 px-4 py-2 border-t">
+            {/* Add tags (borderless) */}
+            <div className="min-w-0 flex-1">
+              <TagInput
+                tags={tags}
+                onChange={setTags}
+                placeholder="Add tags..."
+                borderless
+              />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="sm" onClick={reset} disabled={isSaving}>

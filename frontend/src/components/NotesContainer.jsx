@@ -20,19 +20,16 @@ const Grid = WidthProvider(GridLayout);
 // Grid constraints (kept in sync with the backend /layouts clamps)
 const COLS = 12;
 const ROW_HEIGHT = 80;
-const CONSTRAINTS = { minW: 3, minH: 4, maxW: 8, maxH: 8 };
+const CONSTRAINTS = { minW: 3, minH: 4, maxW: 12, maxH: 8 };
 const DEFAULT_W = 4; // 3 cards per row by default
 const DEFAULT_H = 4;
 
-// maxW < COLS guarantees findFreeSlot always terminates.
 const clampW = (w) =>
   Math.max(CONSTRAINTS.minW, Math.min(Math.round(w) || DEFAULT_W, CONSTRAINTS.maxW));
 const clampH = (h) =>
   Math.max(CONSTRAINTS.minH, Math.min(Math.round(h) || DEFAULT_H, CONSTRAINTS.maxH));
 
-// Find the first free slot scanning left-to-right, top-to-bottom, so new notes
-// fill the current row before wrapping to the next one (and never overlap
-// existing/dragged notes).
+// First free slot scanning left-to-right, top-to-bottom (w <= cols → terminates).
 const findFreeSlot = (placed, w, h, cols) => {
   for (let y = 0; ; y++) {
     for (let x = 0; x + w <= cols; x++) {
@@ -43,6 +40,16 @@ const findFreeSlot = (placed, w, h, cols) => {
     }
   }
 };
+
+// Pinned first (newest pin first), then newest created first.
+const sortNotes = (arr) =>
+  [...arr].sort((a, b) => {
+    const pa = a.pinned ? 1 : 0;
+    const pb = b.pinned ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    if (pa === 1) return new Date(b.pinnedAt || 0) - new Date(a.pinnedAt || 0);
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  });
 
 // Single column / stacked notes below the `lg` breakpoint.
 const useIsMobile = () => {
@@ -59,57 +66,41 @@ const useIsMobile = () => {
   return mobile;
 };
 
-const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
+const NotesContainer = ({
+  notes = [],
+  loading = false,
+  resetSignal,
+  filterTags = [],
+  onEditNote,
+  onDeleted,
+  onTogglePin,
+}) => {
   const dispatch = useDispatch();
   const isMobile = useIsMobile();
   const { layouts } = useSelector((state) => state.layout);
-  const [notes, setNotes] = useState([]);
-  // Live, unsaved drag/resize edits (id -> {x,y,w,h}); takes precedence over
-  // persisted positions until the debounced save lands.
+  // Live, unsaved drag/resize edits (id -> {x,y,w,h}).
   const [localLayout, setLocalLayout] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
-  const initialLoadRef = useRef(false);
   const saveTimeoutRef = useRef(null);
 
-  const fetchNotes = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(`${BaseURL}/notes`);
-      const sortedNotes = response.data.sort((a, b) => a.order - b.order);
-      setNotes(sortedNotes);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const sortedNotes = useMemo(() => {
+    const filtered = filterTags.length
+      ? notes.filter((n) => (n.tags || []).some((t) => filterTags.includes(t)))
+      : notes;
+    return sortNotes(filtered);
+  }, [notes, filterTags]);
 
-  // Initial load
+  // Load persisted layouts once
   useEffect(() => {
-    if (initialLoadRef.current) return;
-    initialLoadRef.current = true;
-    const loadData = async () => {
-      await fetchNotes();
-      await dispatch(fetchLayouts()).unwrap();
-    };
-    loadData();
-  }, [dispatch, fetchNotes]);
+    dispatch(fetchLayouts());
+  }, [dispatch]);
 
-  // Refresh when parent triggers (note added/updated/deleted, layout reset)
-  useEffect(() => {
-    if (refreshTrigger > 0) fetchNotes();
-  }, [refreshTrigger, fetchNotes]);
-
-  // Clear local edits only on an explicit layout reset, so persisted defaults
-  // take over. (Clearing on every `layouts` change caused a save→clear→save
-  // feedback churn.)
+  // Clear local edits on an explicit layout reset, so persisted defaults take over.
   useEffect(() => {
     if (resetSignal > 0) setLocalLayout({});
   }, [resetSignal]);
 
-  // Persisted positions keyed by note id.
   const savedMap = useMemo(() => {
     return layouts.reduce((acc, l) => {
       acc[String(l.noteId)] = l;
@@ -117,12 +108,9 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
     }, {});
   }, [layouts]);
 
-  // Complete, guaranteed-non-overlapping layout for every rendered note,
-  // computed synchronously so a newly created note always has a valid position
-  // (no (0,0) "orphan" overlap, and any corrupted/overlapping saved data is
-  // self-healed). Precedence: live local edit > persisted > first free slot.
-  // A preferred position is kept only if it fits the grid and doesn't collide
-  // with an already-placed note; otherwise the note moves to the next free slot.
+  // Notes flow in sorted order (pinned → newest), packed top-left, so pinned
+  // and newly created notes always appear on top. Persisted *size* (w/h) is
+  // kept, and an in-session drag is respected; positions otherwise re-pack.
   const effectiveLayout = useMemo(() => {
     const placed = [];
     const collides = (a) =>
@@ -130,48 +118,30 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
         (p) => a.x < p.x + p.w && a.x + a.w > p.x && a.y < p.y + p.h && a.y + a.h > p.y
       );
 
-    return notes.map((note) => {
+    return sortedNotes.map((note) => {
       const id = note._id;
-      const src = localLayout[id] || savedMap[id];
-      const w = clampW(src?.w || src?.width);
-      const h = clampH(src?.h || src?.height);
+      const local = localLayout[id];
+      const saved = savedMap[id];
+      const w = clampW((local || saved)?.w || (local || saved)?.width);
+      const h = clampH((local || saved)?.h || (local || saved)?.height);
 
+      // A drag this session is respected; otherwise pack into the next free slot.
       let pos = null;
-      if (src && Number.isFinite(src.x) && Number.isFinite(src.y)) {
-        const cand = { x: src.x, y: src.y, w, h };
-        const fitsGrid = cand.x >= 0 && cand.y >= 0 && cand.x + cand.w <= COLS;
-        if (fitsGrid && !collides(cand)) pos = cand;
+      if (local && Number.isFinite(local.x) && Number.isFinite(local.y)) {
+        const cand = { x: local.x, y: local.y, w, h };
+        const fits = cand.x >= 0 && cand.y >= 0 && cand.x + cand.w <= COLS;
+        if (fits && !collides(cand)) pos = cand;
       }
-      if (!pos) {
-        pos = { ...findFreeSlot(placed, w, h, COLS), w, h };
-      }
+      if (!pos) pos = { ...findFreeSlot(placed, w, h, COLS), w, h };
 
       placed.push(pos);
       return { i: id, ...pos, ...CONSTRAINTS };
     });
-  }, [notes, savedMap, localLayout]);
+  }, [sortedNotes, savedMap, localLayout]);
 
-  // Keep a ref to what's currently displayed so we can ignore no-op
-  // onLayoutChange calls (RGL fires it on mount/compaction with no real change).
-  const effectiveRef = useRef(effectiveLayout);
-  effectiveRef.current = effectiveLayout;
-
-  // Persist layout changes (debounced)
-  const handleLayoutChange = useCallback(
+  // Persist a layout that resulted from an explicit user drag/resize.
+  const persistLayout = useCallback(
     (newLayout) => {
-      const current = effectiveRef.current.reduce((acc, l) => {
-        acc[l.i] = l;
-        return acc;
-      }, {});
-
-      const changed = newLayout.some((item) => {
-        const c = current[item.i];
-        return (
-          !c || c.x !== item.x || c.y !== item.y || c.w !== item.w || c.h !== item.h
-        );
-      });
-      if (!changed) return;
-
       setLocalLayout((prev) => {
         const next = { ...prev };
         newLayout.forEach((item) => {
@@ -206,15 +176,23 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
   const handleDragStart = useCallback((l, o, n, p, e, element) => {
     setDragStyles(true, element);
   }, []);
-  const handleDragStop = useCallback((l, o, n, p, e, element) => {
-    setDragStyles(false, element);
-  }, []);
+  const handleDragStop = useCallback(
+    (layout, o, n, p, e, element) => {
+      setDragStyles(false, element);
+      persistLayout(layout);
+    },
+    [persistLayout]
+  );
   const handleResizeStart = useCallback((l, o, n, p, e, element) => {
     setDragStyles(true, element);
   }, []);
-  const handleResizeStop = useCallback((l, o, n, p, e, element) => {
-    setDragStyles(false, element);
-  }, []);
+  const handleResizeStop = useCallback(
+    (layout, o, n, p, e, element) => {
+      setDragStyles(false, element);
+      persistLayout(layout);
+    },
+    [persistLayout]
+  );
 
   const handleEdit = (note) => {
     if (onEditNote) {
@@ -222,6 +200,7 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
         id: note._id,
         title: note.title,
         paragraph: note.paragraph,
+        tags: note.tags || [],
       });
     }
   };
@@ -241,7 +220,7 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
         delete next[noteToDelete];
         return next;
       });
-      fetchNotes();
+      onDeleted?.(noteToDelete);
       toast.success("Note deleted successfully");
     } catch (error) {
       console.error("Error deleting note:", error);
@@ -251,13 +230,23 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
     }
   };
 
+  const cardProps = (note) => ({
+    title: note.title,
+    paragraph: note.paragraph,
+    tags: note.tags || [],
+    pinned: !!note.pinned,
+    onEdit: () => handleEdit(note),
+    onDelete: () => handleDelete(note._id),
+    onTogglePin: () => onTogglePin?.(note),
+  });
+
   return (
     <div className="w-full">
-      {isLoading ? (
+      {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
-      ) : notes.length === 0 ? (
+      ) : sortedNotes.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <p className="text-2xl font-bold text-muted-foreground">
             No notes found
@@ -269,14 +258,9 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
       ) : isMobile ? (
         // Mobile: simple stacked single column (no drag/resize grid)
         <div className="flex flex-col gap-4">
-          {notes.map((note) => (
+          {sortedNotes.map((note) => (
             <div key={note._id} className="h-52">
-              <ParagraphCard
-                title={note.title}
-                paragraph={note.paragraph}
-                onEdit={() => handleEdit(note)}
-                onDelete={() => handleDelete(note._id)}
-              />
+              <ParagraphCard {...cardProps(note)} />
             </div>
           ))}
         </div>
@@ -286,7 +270,6 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
           layout={effectiveLayout}
           cols={COLS}
           rowHeight={ROW_HEIGHT}
-          onLayoutChange={handleLayoutChange}
           onDragStart={handleDragStart}
           onDragStop={handleDragStop}
           onResizeStart={handleResizeStart}
@@ -301,14 +284,9 @@ const NotesContainer = ({ refreshTrigger, resetSignal, onEditNote }) => {
           dragHandleClassName="drag-handle"
           draggableCancel=".no-drag"
         >
-          {notes.map((note) => (
+          {sortedNotes.map((note) => (
             <div key={note._id} className="grid-item">
-              <ParagraphCard
-                title={note.title}
-                paragraph={note.paragraph}
-                onEdit={() => handleEdit(note)}
-                onDelete={() => handleDelete(note._id)}
-              />
+              <ParagraphCard {...cardProps(note)} />
             </div>
           ))}
         </Grid>

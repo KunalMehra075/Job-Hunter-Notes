@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Provider, useDispatch } from "react-redux";
+import axios from "axios";
 import { store } from "../store/store";
+import { BaseURL } from "../utils/BaseURL";
 import VariablesSidebar from "./VariablesSidebar";
 import NotesContainer from "./NotesContainer";
 import NoteComposer from "./NoteComposer";
 import Navbar from "./Navbar";
 import NoteModal from "./NoteModal";
 import ConfirmDialog from "./ConfirmDialog";
+import TagFilter from "./TagFilter";
 import { Button } from "./ui/button";
 import { RotateCcw } from "lucide-react";
 import { resetLayouts } from "../store/layoutSlice";
@@ -14,9 +17,12 @@ import { toast } from "react-toastify";
 
 const DashboardContent = () => {
   const dispatch = useDispatch();
+  const [notes, setNotes] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(true);
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editNoteData, setEditNoteData] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [resetSignal, setResetSignal] = useState(0);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,12 +31,58 @@ const DashboardContent = () => {
     document.title = "Dashboard · ReuseNotes";
   }, []);
 
-  const handleNoteAdded = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
+  const fetchNotes = useCallback(async () => {
+    try {
+      const res = await axios.get(`${BaseURL}/notes`);
+      setNotes(res.data);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, []);
 
-  const handleNoteUpdated = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  const fetchTags = useCallback(async () => {
+    try {
+      const res = await axios.get(`${BaseURL}/tags`);
+      setAllTags(res.data.map((t) => t.name));
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotes();
+    fetchTags();
+  }, [fetchNotes, fetchTags]);
+
+  // Optimistic, note-wise updates (no full container reload)
+  const handleNoteCreated = (note) => {
+    setNotes((prev) => [note, ...prev]);
+    fetchTags();
+  };
+  const handleNoteUpdated = (note) => {
+    setNotes((prev) => prev.map((n) => (n._id === note._id ? note : n)));
+    fetchTags();
+  };
+  const handleNoteDeleted = (id) =>
+    setNotes((prev) => prev.filter((n) => n._id !== id));
+
+  const toggleTag = (tag) =>
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+
+  const handleTogglePin = async (note) => {
+    try {
+      const res = await axios.put(`${BaseURL}/notes/${note._id}`, {
+        pinned: !note.pinned,
+      });
+      handleNoteUpdated(res.data);
+    } catch (error) {
+      console.error("Error pinning note:", error);
+      toast.error("Failed to update pin");
+    }
   };
 
   const handleEditNote = (noteData) => {
@@ -47,7 +99,6 @@ const DashboardContent = () => {
       await dispatch(resetLayouts()).unwrap();
       toast.success("Layout reset successfully");
       setResetSignal((prev) => prev + 1);
-      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error resetting layouts:", error);
       toast.error("Error resetting layouts");
@@ -66,8 +117,14 @@ const DashboardContent = () => {
           {/* Composer (centered) + Reset Layout on the same level */}
           <div className="mb-8 flex items-start gap-3">
             <div className="flex flex-1 justify-center">
-              <NoteComposer onNoteAdded={handleNoteAdded} />
+              <NoteComposer onCreated={handleNoteCreated} />
             </div>
+            <TagFilter
+              tags={allTags}
+              selected={selectedTags}
+              onToggle={toggleTag}
+              onClear={() => setSelectedTags([])}
+            />
             <Button
               variant="outline"
               size="sm"
@@ -80,32 +137,36 @@ const DashboardContent = () => {
           </div>
 
           <NotesContainer
-            refreshTrigger={refreshTrigger}
+            notes={notes}
+            loading={notesLoading}
             resetSignal={resetSignal}
+            filterTags={selectedTags}
             onEditNote={handleEditNote}
+            onDeleted={handleNoteDeleted}
+            onTogglePin={handleTogglePin}
           />
 
           {/* Edit Note Modal */}
-        <NoteModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onNoteUpdated={handleNoteUpdated}
-          mode="edit"
-          noteData={editNoteData}
-        />
+          <NoteModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onUpdated={handleNoteUpdated}
+            mode="edit"
+            noteData={editNoteData}
+          />
 
-        {/* Reset Layout Confirmation Dialog */}
-        <ConfirmDialog
-          isOpen={isResetConfirmOpen}
-          onClose={() => setIsResetConfirmOpen(false)}
-          onConfirm={handleConfirmReset}
-          title="Reset Layout?"
-          description="This will reset all notes to their default positions. This action cannot be undone."
-          confirmText="Yes, Reset"
-          cancelText="Cancel"
-          variant="warning"
-          confirmVariant="destructive"
-        />
+          {/* Reset Layout Confirmation Dialog */}
+          <ConfirmDialog
+            isOpen={isResetConfirmOpen}
+            onClose={() => setIsResetConfirmOpen(false)}
+            onConfirm={handleConfirmReset}
+            title="Reset Layout?"
+            description="This will reset all notes to their default positions. This action cannot be undone."
+            confirmText="Yes, Reset"
+            cancelText="Cancel"
+            variant="warning"
+            confirmVariant="destructive"
+          />
         </main>
       </div>
     </div>

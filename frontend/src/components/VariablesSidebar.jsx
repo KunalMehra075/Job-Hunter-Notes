@@ -121,10 +121,6 @@ const AddVariableForm = ({ onCancel }) => {
       toast.error("Variable name is required");
       return;
     }
-    if (/\s/.test(trimmed)) {
-      toast.error("Variable name cannot contain spaces");
-      return;
-    }
     try {
       await dispatch(addVariable({ key: trimmed, color })).unwrap();
       onCancel();
@@ -138,7 +134,7 @@ const AddVariableForm = ({ onCancel }) => {
       <Input
         type="text"
         value={key}
-        onChange={(e) => setKey(e.target.value)}
+        onChange={(e) => setKey(e.target.value.replace(/\s+/g, "_"))}
         placeholder="variableName"
         className="h-8 text-sm"
         autoFocus
