@@ -7,6 +7,7 @@ const notesRouter = require('./routes/note.js');
 const variablesRouter = require('./routes/variable.js');
 const authRouter = require('./routes/auth.js');
 const layoutRouter = require('./routes/layout.js');
+const tagsRouter = require('./routes/tag.js');
 const auth = require('./middleware/auth.js');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/notes', auth, notesRouter);
 app.use('/api/variables', auth, variablesRouter);
 app.use('/api/layouts', auth, layoutRouter);
+app.use('/api/tags', auth, tagsRouter);
 
 
 app.use((err, req, res, next) => {

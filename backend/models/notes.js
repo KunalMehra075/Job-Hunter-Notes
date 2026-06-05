@@ -13,6 +13,18 @@ const noteSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    pinned: {
+        type: Boolean,
+        default: false,
+    },
+    pinnedAt: {
+        type: Date,
+        default: null,
+    },
+    tags: {
+        type: [String],
+        default: [],
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

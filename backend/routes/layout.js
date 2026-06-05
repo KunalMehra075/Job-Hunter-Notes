@@ -6,7 +6,6 @@ const Note = require('../models/notes.js');
 // Get all layouts for the current user
 router.get('/', async (req, res) => {
     try {
-        console.log({ fetching: "layouts" })
         const layouts = await Layout.find({ userId: req.user.userId })
             .populate('noteId', 'title paragraph')
             .sort({ createdAt: 1 });

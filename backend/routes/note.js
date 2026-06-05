@@ -2,11 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Note = require('../models/notes.js');
 const Layout = require('../models/layout.js');
+const Tag = require('../models/tags.js');
 
-// Get all notes for the current user
+// Get all notes for the current user (pinned first, then newest first)
 router.get('/', async (req, res) => {
     try {
-        const notes = await Note.find({ user: req.user.userId }).sort({ order: 1 });
+        const notes = await Note.find({ user: req.user.userId }).sort({
+            pinned: -1,
+            pinnedAt: -1,
+            createdAt: -1,
+        });
         res.json(notes);
     } catch (error) {
         console.error('Error fetching notes:', error);
@@ -16,7 +21,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const { title, paragraph } = req.body;
+        const { title, paragraph, tags } = req.body;
 
         if (!title || !paragraph) {
             return res.status(400).json({ message: 'Title and paragraph are required' });
@@ -33,10 +38,12 @@ router.post('/', async (req, res) => {
             title,
             paragraph,
             order,
+            tags: Array.isArray(tags) ? tags : [],
             user: req.user.userId
         });
 
         await note.save();
+        await Tag.upsertMany(req.user.userId, note.tags);
         res.status(201).json(note);
     } catch (error) {
         console.error('Error creating note:', error);
@@ -67,19 +74,30 @@ router.put('/reorder', async (req, res) => {
     }
 });
 
-// Update a note
+// Update a note (title / paragraph / tags / pinned)
 router.put('/:id', async (req, res) => {
     try {
-        const { title, paragraph } = req.body;
+        const { title, paragraph, tags, pinned } = req.body;
+        const update = {};
+        if (title !== undefined) update.title = title;
+        if (paragraph !== undefined) update.paragraph = paragraph;
+        if (Array.isArray(tags)) update.tags = tags;
+        if (pinned !== undefined) {
+            update.pinned = pinned;
+            update.pinnedAt = pinned ? new Date() : null;
+        }
+
         const note = await Note.findOneAndUpdate(
             { _id: req.params.id, user: req.user.userId },
-            { title, paragraph },
+            update,
             { new: true }
         );
 
         if (!note) {
             return res.status(404).json({ message: 'Note not found' });
         }
+
+        if (Array.isArray(tags)) await Tag.upsertMany(req.user.userId, tags);
 
         res.json(note);
     } catch (error) {
