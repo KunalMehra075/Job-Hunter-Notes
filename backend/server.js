@@ -22,12 +22,6 @@ if (process.env.CORS_ORIGINS) {
 app.use(
     cors({
         origin(origin, callback) {
-           let host = '';
-            try {
-                host = origin ? new URL(origin).hostname : '';
-            } catch {
-                host = '';
-            }
             if (!origin || allowedOrigins.includes(origin)) {
                 return callback(null, true);
             }
