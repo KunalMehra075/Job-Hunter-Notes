@@ -2,7 +2,7 @@
 
 # Keep the preview/default *.pages.dev subdomain out of Google's index so it
 # never competes with the real reusenotes.com domain (duplicate content).
-https://:project.pages.dev/*
+https://job-hunter-notes.pages.dev/*
   X-Robots-Tag: noindex
 
 # Baseline security headers for all responses.
