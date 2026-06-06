@@ -17,6 +17,23 @@ import "./NotesContainer.css";
 
 const Grid = WidthProvider(GridLayout);
 
+// Skeleton placeholder shown while notes load.
+const SkeletonCard = () => (
+  <div className="flex h-48 flex-col rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+    <div className="mt-3 flex gap-2">
+      <div className="h-3 w-12 animate-pulse rounded bg-muted" />
+      <div className="h-3 w-10 animate-pulse rounded bg-muted" />
+    </div>
+    <div className="mt-4 flex-1 space-y-2">
+      <div className="h-3 w-full animate-pulse rounded bg-muted" />
+      <div className="h-3 w-11/12 animate-pulse rounded bg-muted" />
+      <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+      <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+    </div>
+  </div>
+);
+
 // Grid constraints (kept in sync with the backend /layouts clamps)
 const COLS = 12;
 const ROW_HEIGHT = 80;
@@ -243,8 +260,10 @@ const NotesContainer = ({
   return (
     <div className="w-full">
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : sortedNotes.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
