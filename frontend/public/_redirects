@@ -1,0 +1,13 @@
+# Cloudflare Pages routing rules.
+# Static files (index.html, privacy.html, terms.html, about.html, contact.html,
+# 404.html, assets/*) are served directly BEFORE these rules — clean URLs like
+# /privacy automatically resolve to /privacy.html.
+
+# React SPA application routes -> serve the clean app shell (app.html), NOT the
+# prerendered homepage (index.html), so they never flash the landing markup.
+/dashboard    /app.html    200
+/login        /app.html    200
+/profile      /app.html    200
+
+# Anything else that is not a real file -> branded 404 (real 404 status for SEO).
+/*            /404.html      404

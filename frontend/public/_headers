@@ -1,0 +1,16 @@
+# Cloudflare Pages headers.
+
+# Keep the preview/default *.pages.dev subdomain out of Google's index so it
+# never competes with the real reusenotes.com domain (duplicate content).
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+# Baseline security headers for all responses.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Long-lived caching for hashed, immutable build assets.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -4,6 +4,7 @@ import Hero from "./Hero";
 import PainPoints from "./PainPoints";
 import Comparison from "./Comparison";
 import UseCases from "./UseCases";
+import SeoContent from "./SeoContent";
 import FAQ from "./FAQ";
 import FinalCTA from "./FinalCTA";
 import Footer from "./Footer";
@@ -37,6 +38,7 @@ const LandingPage = () => {
         <PainPoints />
         <Comparison />
         <UseCases />
+        <SeoContent />
         <FAQ />
           <FinalCTA />
         </main>

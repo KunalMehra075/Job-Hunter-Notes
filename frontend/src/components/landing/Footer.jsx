@@ -12,10 +12,13 @@ const Footer = () => {
           </span>
         </div>
 
-        <nav className="flex items-center gap-6 text-sm text-slate-600">
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600">
           <a href="#features" className="transition hover:text-slate-900">Features</a>
           <a href="#faq" className="transition hover:text-slate-900">FAQ</a>
-          <a href="#" className="transition hover:text-slate-900">Privacy</a>
+          <a href="/about" className="transition hover:text-slate-900">About</a>
+          <a href="/contact" className="transition hover:text-slate-900">Contact</a>
+          <a href="/privacy" className="transition hover:text-slate-900">Privacy</a>
+          <a href="/terms" className="transition hover:text-slate-900">Terms</a>
         </nav>
 
         <p className="text-sm text-slate-400">© ReuseNotes.com</p>

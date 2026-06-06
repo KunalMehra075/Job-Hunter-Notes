@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /login
+Disallow: /profile
+
+Sitemap: https://reusenotes.com/sitemap.xml
