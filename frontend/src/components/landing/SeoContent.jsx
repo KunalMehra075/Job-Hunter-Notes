@@ -13,8 +13,9 @@ const SeoContent = () => {
 
         <div className="mt-6 space-y-5 text-[15px] leading-relaxed text-slate-600 sm:text-base">
           <Reveal as="p">
-            <strong className="text-slate-900">ReuseNotes</strong> is a reusable notes app that
-            turns the text you write over and over into dynamic templates. Instead of copying an
+            <strong className="text-slate-900">ReuseNotes</strong> is a reusable notes app — a way
+            to build notes with variables and reuse them, turning the text you write over and over
+            into dynamic templates you can alter in one place. Instead of copying an
             old note and hunting for every name, company, link, and date to replace, you write the
             note once using smart variables like{" "}
             <code className="rounded bg-violet-50 px-1.5 py-0.5 text-[#6D28FF]">{"{{companyName}}"}</code>{" "}
