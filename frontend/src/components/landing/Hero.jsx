@@ -28,7 +28,7 @@ const Hero = () => {
               to="/dashboard"
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#6D28FF] px-7 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:bg-[#5b1fe0] active:scale-[0.98] sm:w-auto"
             >
-              Start Free <ArrowRight className="h-5 w-5" />
+              Create Note <ArrowRight className="h-5 w-5" />
             </Link>
             <a
               href="#demo"
@@ -46,7 +46,7 @@ const Hero = () => {
         <div id="demo" className="mx-auto mt-12 max-w-4xl scroll-mt-20 sm:mt-16">
           <InteractiveDemo />
           <p className="mt-3 text-center text-sm text-slate-500">
-            Edit a value on the left — the preview updates instantly.
+            Edit a variable — every note in that group updates instantly.
           </p>
         </div>
       </div>

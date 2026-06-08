@@ -29,7 +29,7 @@ const LandingNav = () => {
           to="/dashboard"
           className="inline-flex h-10 items-center justify-center rounded-lg bg-[#6D28FF] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5b1fe0] active:scale-[0.98]"
         >
-          Start Free
+          Create Note
         </Link>
       </nav>
     </header>

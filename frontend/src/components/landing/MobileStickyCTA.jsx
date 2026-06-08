@@ -7,7 +7,7 @@ const MobileStickyCTA = () => {
         to="/dashboard"
         className="flex h-12 w-full items-center justify-center rounded-xl bg-[#6D28FF] text-base font-semibold text-white shadow-lg shadow-violet-500/25 active:scale-[0.99]"
       >
-        Start Free
+        Create Note
       </Link>
     </div>
   );
